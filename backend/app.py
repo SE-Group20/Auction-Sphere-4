@@ -458,13 +458,30 @@ def get_top_products():
     return jsonify(response)
 
 database = r"auction.db"
-create_users_table = """CREATE TABLE IF NOT EXISTS users( first_name TEXT NOT NULL, last_name TEXT NOT NULL, contact_number TEXT NOT NULL UNIQUE, email TEXT UNIQUE PRIMARY KEY, password TEXT NOT NULL);"""
+create_users_table = """CREATE TABLE IF NOT EXISTS users( 
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    first_name TEXT NOT NULL, 
+    last_name TEXT NOT NULL, 
+    contact_number TEXT NOT NULL UNIQUE, 
+    email TEXT UNIQUE, 
+    password TEXT NOT NULL);"""
 
 create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
 
 create_table_claims = """CREATE TABLE IF NOT EXISTS claims(prod_id INTEGER, email TEXT NOT NULL, expiry_date TEXT NOT NULL, claim_status INTEGER, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id));"""
+
+create_message_table = """CREATE TABLE IF NOT EXISTS messages(
+    message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    recipient_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    time_sent TIMESTAMP NOT NULL,
+    read BOOLEAN DEFAULT 0,
+    FOREIGN KEY (message_id) REFERENCES users (user_id)
+    FOREIGN KEY (sender_id) REFERENCES users (user_id)
+)"""
 
 """Create Connection to database"""
 conn = create_connection(database)
@@ -473,6 +490,7 @@ if conn is not None:
     create_table(conn, create_product_table)
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
+    create_table(conn, create_message_table)
 else:
     print("Error! Cannot create the database connection")
 
