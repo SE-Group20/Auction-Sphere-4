@@ -73,3 +73,15 @@ def test_update_product(mock_create_call):
         result = app.update_product_details()
         #print("result=", result)
     assert result['message'].__eq__("Updated product successfully")
+
+@patch('app.send_message')
+def test_send_message(mock_send_call):
+    mock_send_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    mock_send_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"message": "Hello!", "recipient_id": 1, "sender_id": 2, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.send_message()
+    assert result['message'].__eq__("Message sent successfully")
