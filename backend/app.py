@@ -14,6 +14,7 @@ chatService = ChatService()
 
 global_email = None
 
+
 def create_connection(db_file):
     conn = None
     conn = sqlite3.connect(db_file)
@@ -100,8 +101,7 @@ If the email and password are correct, login is successful else user is asked to
 
 
 @app.route("/login", methods=["POST"])
-
-def login(): 
+def login():
     global global_email
     email = request.get_json()['email']
     password = request.get_json()['password']
@@ -460,6 +460,7 @@ def get_top_products():
         "products": products}
     return jsonify(response)
 
+
 @app.route("/message", methods=["POST"])
 def send_message():
     product_id = request.get_json()['product_id']
@@ -468,6 +469,11 @@ def send_message():
     message = request.get_json()['message']
 
     return chatService.send_message(message, recipient_id, sender_id, product_id)
+
+
+@app.route("/message/product/<product_id>", methods=["GET"])
+def read_message(product_id):
+    return chatService.read_message(global_id, product_id)
 
 
 database = r"auction.db"
