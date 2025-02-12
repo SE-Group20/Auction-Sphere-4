@@ -5,9 +5,12 @@ import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
 
+from services.chat import ChatService
+
 app = Flask(__name__)
 CORS(app)
 
+chatService = ChatService()
 
 global_email = None
 
@@ -457,6 +460,16 @@ def get_top_products():
         "products": products}
     return jsonify(response)
 
+@app.route("/message", methods=["POST"])
+def send_message():
+    product_id = request.get_json()['product_id']
+    sender_id = request.get_json()['sender_id']
+    recipient_id = request.get_json()['recipient_id']
+    message = request.get_json()['message']
+
+    return chatService.send_message(message, recipient_id, sender_id, product_id)
+
+
 database = r"auction.db"
 create_users_table = """CREATE TABLE IF NOT EXISTS users( 
     user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -476,11 +489,13 @@ create_message_table = """CREATE TABLE IF NOT EXISTS messages(
     message_id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_id INTEGER NOT NULL,
     recipient_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
     message TEXT NOT NULL,
-    time_sent TIMESTAMP NOT NULL,
+    time_sent DATETIME DEFAULT CURRENT_TIMESTAMP,
     read BOOLEAN DEFAULT 0,
     FOREIGN KEY (message_id) REFERENCES users (user_id)
     FOREIGN KEY (sender_id) REFERENCES users (user_id)
+    FOREIGN KEY (product_id) REFERENCES product (prod_id)
 )"""
 
 """Create Connection to database"""
