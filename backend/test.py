@@ -85,3 +85,29 @@ def test_send_message(mock_send_call):
     with mock.patch("app.request", m):
         result = app.send_message()
     assert result['message'].__eq__("Message sent successfully")
+
+@patch('app.read_message')
+def test_read_message_failure(mock_read_call):
+    mock_read_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    mock_read_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"global_id": 123, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.read_message()
+    assert result['message'].__eq__("User has not messaged regarding this product.")
+
+@patch('app.read_message')
+def test_read_message_success(mock_read_call):
+    mock_read_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    cursor.execute('''INSERT INTO messages (sender_id, recipient_id, product_id, message) 
+            VALUES (?, ?, ?, ?)''', [123, 122, 42, "this is a message"])
+    connection.commit()
+    mock_read_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"global_id": 123, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.read_message()
