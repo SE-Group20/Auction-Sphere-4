@@ -23,14 +23,28 @@ const AddBid = ({ productId, sellerEmail }) => {
                 if (localStorage.getItem('email') === sellerEmail) {
                     toast.error('Cannot bid on your own product!')
                 } else {
-                    response = await axios.post(`${URL}/bid/create`, {
+                    const response = await axios.post(`${URL}/bid/create`, {
                         bidAmount: amount,
                         prodId: productId,
                         email: localStorage.getItem('email'),
-                    })
-                    window.location.reload(false)
-                    console.log(response)
-                    toast.success(response.data.message)
+                    });
+
+                    if (response.status === 200) {
+                        toast.success(response.data.message)
+                        const owner = await axios.post(`${URL}/getOwner`, {
+                            productID: productId
+                        })
+                        console.log(owner)
+                        // Send a notification after a successful bid
+                        await axios.post(`${URL}/notifications`, {
+                            user_id: owner.data.result[0][0],  // Assuming email is the user ID
+                            message: `Your bid of $${amount} has been placed on : ${productId}.`,
+                            detail_page: `/product/${productId}` // A link to the product details page
+                        });
+                        console.log({URL})
+                        toast.info('Notification sent successfully!');
+                        window.location.reload(false);
+                    }
                 }
             }
         } catch (e) {

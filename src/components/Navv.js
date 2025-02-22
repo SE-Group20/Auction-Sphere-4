@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
+import axios from 'axios'
 import {
     Collapse,
     Navbar,
@@ -14,7 +15,9 @@ import {
     DropdownItem,
     NavbarText,
 } from 'reactstrap'
+import Notifications from "react-notifications-menu"
 import logo from '../assets/NavLogo.png'
+import cabinet from '../assets/cabinet.jpg'
 
 /**
  * This component is the Navigation bar of our application.
@@ -22,13 +25,45 @@ import logo from '../assets/NavLogo.png'
 
 function Navv(args) {
     const [isOpen, setIsOpen] = useState(true)
-
+    const [notifications, setNotifications] = useState([]);
+    
     const toggle = () => setIsOpen(!isOpen)
     const handleLogout = () => {
         localStorage.clear()
         window.location.reload()
         toast.info('Logged out')
     }
+    
+    const data = 
+        [
+        {
+          message : 'Someone just bid!',
+          detailPage : '/products', 
+          receivedTime:'12h ago'
+        }
+     ]
+    
+    const fetchNotifications = async () => {
+        try {
+            const user_id = 1;
+            const response = await axios.get(`/notifications/${user_id}`);
+            setNotifications(response.data.notifications);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    };
+
+    // Fetch Notifications on Mount & Every 30s
+    useEffect(() => {
+        fetchNotifications(); // Initial fetch
+
+        const interval = setInterval(() => {
+            fetchNotifications(); // Poll every 30s
+        }, 10000);
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, []);
+    
 
     return (
         <div>
@@ -96,6 +131,10 @@ function Navv(args) {
                                     >
                                         Profile
                                     </NavLink>
+                                </Nav>
+                                <Nav className="ms-auto">
+                                <Notifications 
+                                data={data} />
                                 </Nav>
                             </>
                         ) : (

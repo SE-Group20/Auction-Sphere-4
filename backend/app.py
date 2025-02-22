@@ -4,12 +4,16 @@ from flask_cors import CORS
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
+from notification import NotificationService
 
 app = Flask(__name__)
 CORS(app)
 
+notificationService = NotificationService()
+
 
 global_email = None
+global_id = None
 
 def create_connection(db_file):
     conn = None
@@ -117,6 +121,7 @@ def login():
         response["message"] = "Logged in successfully"
 
         global_email = str(email)
+        global_id = result[0][0]
     else: 
         # check if email exists, but password is incorrect
         query = "SELECT COUNT(*) FROM users WHERE email='" + str(email) + "';"
@@ -339,6 +344,25 @@ def get_product_image():
     response = {"result": result}
     return response
 
+"""
+API end point to get image from product ID.
+This API is used to get image of the product on the basis of productId extracted from the json.
+This returns photo from the product table.
+
+"""
+
+
+@app.route("/getOwner", methods=["POST"])
+def get_product_owner():
+    productId = request.get_json()['productID']
+    query = "SELECT u.user_id FROM users u JOIN product p on u.email = p.seller_email WHERE p.prod_id=" + str(productId) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+    result = list(c.fetchall())
+    response = {"result": result}
+    return response
+
 
 """
 API end point to details of a product from product ID.
@@ -457,14 +481,79 @@ def get_top_products():
         "products": products}
     return jsonify(response)
 
+"""
+API end point for new notification creation.
+This API is used to create new notifications for users.
+Here, messages, recpients,  are extracted from the json.
+These values are entered into the product table.
+"""
+
+
+@app.route("/notifications", methods=["POST"])
+def create_notification():
+    user_id = request.get_json()['user_id']
+    message = request.get_json()['message']
+    detail_page = request.get_json()['detail_page']
+    currentdatetime = datetime.now()
+    formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
+    conn = create_connection(database)
+    c = conn.cursor()
+    response = {}
+
+    query = "INSERT INTO notifications(user_id, message, detail_page, time_sent, read) VALUES (?,?,?,?,?)"
+    c.execute(
+        query,
+        (str(user_id),
+         str(message),
+         str(detail_page),
+         str(formatted_date),
+         False))
+    conn.commit()
+    response["result"] = "Added notification successfully"
+
+    return response
+
+@app.route("/notifications/<int:user_id>", methods=["GET"])
+def get_user_notifications(user_id):
+        query = '''SELECT message,detail_page,time_sent 
+                  FROM notifications 
+                  WHERE user_id = ? AND read = FALSE'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query, [user_id])
+        results = list(c.fetchall())
+        
+        if len(results) == 0:
+            return {"notifications": "User has no unread notifications."}
+        else:
+            return {"notifications": results}
+
+
 database = r"auction.db"
-create_users_table = """CREATE TABLE IF NOT EXISTS users( first_name TEXT NOT NULL, last_name TEXT NOT NULL, contact_number TEXT NOT NULL UNIQUE, email TEXT UNIQUE PRIMARY KEY, password TEXT NOT NULL);"""
+create_users_table = """CREATE TABLE IF NOT EXISTS users( 
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    first_name TEXT NOT NULL, 
+    last_name TEXT NOT NULL, 
+    contact_number TEXT NOT NULL UNIQUE, 
+    email TEXT UNIQUE, 
+    password TEXT NOT NULL);"""
 
 create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
 
 create_table_claims = """CREATE TABLE IF NOT EXISTS claims(prod_id INTEGER, email TEXT NOT NULL, expiry_date TEXT NOT NULL, claim_status INTEGER, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id));"""
+
+
+create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
+    notif_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    message TEST NOT NULL,
+    detail_page TEST NOT NULL,
+    time_sent DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT 0
+    
+    )"""
 
 """Create Connection to database"""
 conn = create_connection(database)
@@ -473,6 +562,7 @@ if conn is not None:
     create_table(conn, create_product_table)
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
+    create_table(conn, create_notification_table)
 else:
     print("Error! Cannot create the database connection")
 
