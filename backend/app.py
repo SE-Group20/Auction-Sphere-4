@@ -478,6 +478,9 @@ def send_message():
 
     return chatService.send_message(message, recipient_id, sender_id, product_id)
 
+@app.route("/messages", methods=["GET"])
+def get_messages():
+    return chatService.get_messages(global_id)
 
 @app.route("/message/product/<product_id>", methods=["GET"])
 def read_message(product_id):
