@@ -25,6 +25,11 @@ class ChatService:
         self.cursor.execute(query, (product_id, user_id))
         return self.cursor.fetchone()[0]
 
+    def set_messages_to_read(self, product_id, current_user, sender_id):
+        query = '''UPDATE messages SET read = 1 WHERE product_id = ? AND recipient_id = ? AND sender_id = ?'''
+        self.cursor.execute(query, (product_id, current_user, sender_id))
+        self.conn.commit()
+
     def read_message(self, user_id, bidder_user_id, product_id):
         query = '''SELECT 
         u.first_name,
@@ -48,6 +53,7 @@ class ChatService:
         if len(results) == 0:
             return {"message": "User has not messaged regarding this product."}
         else:
+            self.set_messages_to_read(product_id, user_id, results[8])
             return results
 
     def get_messages(self, user_id):
