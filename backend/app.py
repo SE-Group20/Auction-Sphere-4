@@ -105,6 +105,7 @@ If the email and password are correct, login is successful else user is asked to
 @app.route("/login", methods=["POST"])
 def login():
     global global_email
+    global global_id
     email = request.get_json()['email']
     password = request.get_json()['password']
 
@@ -523,6 +524,10 @@ if conn is not None:
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
     create_table(conn, create_message_table)
+
+    cursor = conn.cursor()
+    conn.commit()
+
 else:
     print("Error! Cannot create the database connection")
 
