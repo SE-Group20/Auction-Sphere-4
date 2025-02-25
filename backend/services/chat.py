@@ -32,20 +32,36 @@ class ChatService:
             return results
 
     def get_messages(self, user_id):
-        query = '''SELECT DISTINCT product.prod_id AS product_id, product.name AS product_name,
-            users.user_id AS user_id, users.first_name AS first_name,
-            users.last_name AS last_name, messages.message AS message,
-            messages.time_sent AS time_sent, messages.read AS read
-        FROM messages
-        JOIN users
-            ON messages.recipient_id = users.user_id OR messages.sender_id = users.user_id
-        JOIN product
-            ON messages.product_id = product.prod_id
-        WHERE
-            (recipient_id = ? AND users.user_id = sender_id)  OR
-            (sender_id = ? AND users.user_id = messages.recipient_id)
-        GROUP BY product.prod_id, messages.sender_id, messages.recipient_id
-        ORDER BY messages.time_sent DESC'''
+        query = '''WITH conversation_set AS (
+    SELECT
+        m.sender_id AS sender_id,
+        m.recipient_id,
+        m.product_id,
+        ROW_NUMBER() OVER (PARTITION BY m.product_id ORDER BY m.message_id DESC) AS message_id_rank,
+        m.message_id AS message_id
+    FROM
+        messages m
+    WHERE
+        (m.recipient_id = ? OR m.sender_id ?)
+)
+SELECT
+    u.first_name,
+    u.last_name,
+    p.name AS product_name,
+    cs.message_id AS message_id,
+    m.message,
+    m.read,
+    m.time_sent
+
+FROM
+    conversation_set cs
+JOIN
+    messages m ON cs.product_id = m.product_id AND cs.message_id_rank = 1
+LEFT JOIN
+    users u ON (cs.sender_id IN (SELECT user_id FROM users) OR cs.recipient_id IN (SELECT user_id FROM users)) = (SELECT first_name FROM users WHERE last_name = u.last_name)
+LEFT JOIN
+    product p ON m.product_id = p.prod_id
+ORDER BY m.time_sent DESC'''
 
         message_details = [user_id, user_id]
 
