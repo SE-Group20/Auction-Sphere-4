@@ -4,6 +4,9 @@ import { URL } from '../../global'
 import { toast } from 'react-toastify'
 import { Stack } from 'react-bootstrap'
 import ConversationCard from './ConversationCard'
+import { Link } from 'react-router-dom'
+import '../../css/bootstrap.min.css'
+
 
 function ConversationsList (data) {
     const [messages, setMessages] = useState([])
@@ -18,11 +21,21 @@ function ConversationsList (data) {
         }
         fetchData()
     }, [])
+
+    function bidder_id(message) {
+        return message[10] === message[8] ? message[9] : message[8]
+    }
     return (
         <Stack gap={3}>
             {messages ? (
                 messages.map((message) => (
-                    <ConversationCard message={message}/>
+                    <Link to={"/message/" + message[7] + "/user/" + bidder_id(message)}>
+                        <ConversationCard
+                            message={message}
+                            conversationExchange={false}
+                            className="conversation-wrapper"
+                        />
+                    </Link>
                 ))
             ) : (<i>No messages</i>)}
         </Stack>

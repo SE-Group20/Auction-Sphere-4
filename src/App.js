@@ -12,6 +12,8 @@ import AddBid from './components/AddBid'
 import Profile from './components/Profile'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import MessagesListByConversation from './components/messagingComponents/MessagesListByConversation'
+import './css/bootstrap.min.css'
 
 function App() {
     return (
@@ -29,6 +31,7 @@ function App() {
                 <Route path="/details/:id" element={<ProductDetails />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/messages" element={<Messages />} />
+                <Route path="/message/:product_id/user/:bidder_id" element={<MessagesListByConversation />} />
             </Routes>
         </>
         // </BrowserRouter>

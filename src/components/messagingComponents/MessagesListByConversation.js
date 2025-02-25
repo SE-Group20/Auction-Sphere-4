@@ -1,25 +1,28 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { URL } from '../global'
+import { URL } from '../../global'
 import { toast } from 'react-toastify'
-import Navv from './Navv'
-import ConversationsList from './messagingComponents/ConversationsList'
+import Navv from '../Navv'
+import ConversationsList from './ConversationsList'
+import { useParams } from 'react-router-dom'
+import { Stack } from 'react-bootstrap'
+import ConversationCard from './ConversationCard'
 
-const Messages = () => {
-    const [data, setData] = useState(null)
-
+function MessagesListByConversation () {
+    const { product_id, bidder_id } = useParams()
+    const [messages, setMessages] = useState([])
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.post(`${URL}/profile`)
-                console.log(response.data)
-                setData(response.data)
+                const response = await axios.get(`${URL}/message/product/` + product_id + `/bidder/` + bidder_id)
+                setMessages(response.data)
             } catch (e) {
                 toast.error(e)
             }
         }
         fetchData()
     }, [])
+
     return (
         <>
             <div
@@ -30,12 +33,12 @@ const Messages = () => {
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    right: 0
+                    right: 0,
                 }}
             >
                 <Navv />
                 <div>
-                    {data ? (
+                    {messages ? (
                         <>
                             <div
                                 style={{
@@ -50,7 +53,14 @@ const Messages = () => {
                                 }}
                             >
                                 <h3 style={{ color: 'white' }}>Messages</h3>
-                                <ConversationsList data={data}/>
+                                <Stack gap={3}>
+                                    {messages ? messages.map((message) => (
+                                        <ConversationCard
+                                            message={message}
+                                            conversationExchange={true}
+                                        />
+                                    )) : 'No messages found'}
+                                </Stack>
                             </div>
                         </>
                     ) : (
@@ -60,7 +70,6 @@ const Messages = () => {
             </div>
         </>
     )
-
 }
 
-export default Messages
+export default MessagesListByConversation

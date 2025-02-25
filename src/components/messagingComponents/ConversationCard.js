@@ -1,9 +1,8 @@
 import classnames from 'classnames'
 
-function ConversationCard (message) {
+function ConversationCard (message, conversationExchange) {
     function makeEllipses (str) {
-        console.log(str)
-        if (str.length > 250)
+        if (str.length > 250  && !conversationExchange)
             return str.substring(0,247) + '...';
         return str
     }
@@ -16,8 +15,8 @@ function ConversationCard (message) {
     return (
         <div className={messageClasses}>
             <h4>
-                {msg[2]} - {msg[0]}{' '}
-                {msg[1]}
+                {!conversationExchange ? msg[0] + " " + msg[1] :
+                msg[2] + " - " + msg[0] + " " + msg[1]}
             </h4>
             <i className="timestamp">{msg[6]}</i>
             <p className="message_preview">{makeEllipses(msg[4])}</p>

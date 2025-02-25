@@ -19,10 +19,29 @@ class ChatService:
 
         return {"message": "Message sent successfully"}
 
-    def read_message(self, user_id, product_id):
-        print((user_id, product_id))
-        query = '''SELECT * FROM messages WHERE (sender_id = ? OR recipient_id = ?) AND product_id = ? ORDER BY time_sent DESC'''
-        message_details = [user_id, user_id, product_id]
+
+    def user_is_product_seller(self, product_id, user_id):
+        query= '''SELECT EXISTS(SELECT 1 FROM product WHERE prod_id = ? AND seller_id = ?)'''
+        self.cursor.execute(query, (product_id, user_id))
+        return self.cursor.fetchone()[0]
+
+    def read_message(self, user_id, bidder_user_id, product_id):
+        query = '''SELECT 
+        u.first_name,
+        u.last_name,
+        p.name AS product_name,
+        m.message_id AS message_id,
+        m.message,
+        m.read,
+        m.time_sent
+         FROM messages AS m
+        LEFT JOIN users AS u ON u.user_id = m.sender_id 
+        LEFT JOIN product AS p ON p.prod_id = m.product_id 
+          WHERE 
+        (sender_id = ? OR recipient_id = ?) 
+        AND product_id = ? 
+        ORDER BY time_sent DESC'''
+        message_details = [bidder_user_id, bidder_user_id, product_id]
 
         self.cursor.execute(query, message_details)
         results = list(self.cursor.fetchall())
@@ -52,7 +71,11 @@ SELECT
     cs.message_id AS message_id,
     m.message,
     m.read,
-    m.time_sent
+    m.time_sent,
+    p.prod_id AS product_id,
+    m.recipient_id,
+    m.sender_id,
+    p.seller_id
 
 FROM
     conversation_set cs
