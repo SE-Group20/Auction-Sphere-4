@@ -32,6 +32,7 @@ class ChatService:
             return results
 
     def get_messages(self, user_id):
+        print(user_id)
         query = '''WITH conversation_set AS (
     SELECT
         m.sender_id AS sender_id,
@@ -42,7 +43,7 @@ class ChatService:
     FROM
         messages m
     WHERE
-        (m.recipient_id = ? OR m.sender_id ?)
+        (m.recipient_id = ? OR m.sender_id = ?)
 )
 SELECT
     u.first_name,
@@ -58,15 +59,17 @@ FROM
 JOIN
     messages m ON cs.product_id = m.product_id AND cs.message_id_rank = 1
 LEFT JOIN
-    users u ON (cs.sender_id IN (SELECT user_id FROM users) OR cs.recipient_id IN (SELECT user_id FROM users)) = (SELECT first_name FROM users WHERE last_name = u.last_name)
+    users u ON ((cs.sender_id = u.user_id AND ? != cs.sender_id) OR
+                (cs.recipient_id = u.user_id AND ? != cs.recipient_id))
 LEFT JOIN
     product p ON m.product_id = p.prod_id
 ORDER BY m.time_sent DESC'''
 
-        message_details = [user_id, user_id]
+        message_details = [user_id, user_id, user_id, user_id]
 
         self.cursor.execute(query, message_details)
         results = list(self.cursor.fetchall())
+
         if len(results) == 0:
             return {"message": "User has not messaged regarding this product."}
         else:

@@ -5,6 +5,7 @@ import About from './components/About'
 import Signup from './components/LoginSignup/Signup.js'
 import Login from './components/LoginSignup/Login'
 import Products from './components/Products'
+import Messages from './components/Messages'
 import Sell from './components/Sell'
 import ProductDetails from './components/ProductDetails'
 import AddBid from './components/AddBid'
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/sell" element={<Sell />} />
                 <Route path="/details/:id" element={<ProductDetails />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/messages" element={<Messages />} />
             </Routes>
         </>
         // </BrowserRouter>
