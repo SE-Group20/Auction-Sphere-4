@@ -98,18 +98,31 @@ def test_notification_failure(mock_read_call):
         result = app.get_user_notifications(1)
     assert result['notifications'].__eq__("User has no unread notifications.")
     
-@patch('app.get_user_notifications')
+@patch('app.create_connection')
 def test_notification_success(mock_read_call):
     # Create mock connection and cursor
-    mock_read_call = MagicMock()
     connection = Mock()
-    cursor = connection.cursor()
-    cursor.execute('''INSERT INTO notifications (user_id, message, detail_page) 
-            VALUES (?, ?, ?)''', [1, "this is a message", '\\profile',])
-    connection.commit()
+    cursor = Mock()
+    connection.cursor.return_value = cursor
+    # Simulate query results
+    cursor.fetchall.return_value = [
+        ("this is a message", "\\profile", "Now")
+    ]
+    # Mock create_connection to return the mock connection
     mock_read_call.return_value = connection
-    m = mock.MagicMock()
-    m.values = {"user_id": 1}
-    with mock.patch("app.request", m):
-        result = app.get_user_notifications(1)
-    assert result['notifications'].__eq__("User has no unread notifications.")
+    # Call the function
+    result = app.get_user_notifications(1)
+    # Expected result
+    expected_result = {
+        "notifications": [
+            {
+                "image": "logo192.png",
+                "message": "this is a message",
+                "detailPage": "\\profile",
+                "receivedTime": "Now"
+            }
+        ]
+    }
+    # Assertions
+    assert result == expected_result
+    

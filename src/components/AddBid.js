@@ -35,11 +35,16 @@ const AddBid = ({ productId, sellerEmail }) => {
                             productID: productId
                         })
                         console.log(owner)
+                        const prodName = await axios.get(`${URL}/getName`, {
+                            params: {productID: productId}
+                        })
+                        console.log(owner)
                         // Send a notification after a successful bid
                         await axios.post(`${URL}/notifications`, {
-                            user_id: owner.data.result[0][0],  // Assuming email is the user ID
-                            message: `Your bid of $${amount} has been placed on : ${productId}.`,
-                            detail_page: `/product/${productId}` // A link to the product details page
+                            user_id: owner.data.result[0][0], 
+                            
+                            message: `A bid of $${amount} has been placed on : ${prodName.data.result}.`,
+                            detail_page: `/details/${productId}` // A link to the product details page
                         });
                         console.log({URL})
                         toast.info('Notification sent successfully!');

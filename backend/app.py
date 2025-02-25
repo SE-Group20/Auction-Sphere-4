@@ -4,6 +4,8 @@ from flask_cors import CORS
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
+
+from pytest import param
 from notification import NotificationService
 
 app = Flask(__name__)
@@ -33,7 +35,6 @@ def create_table(conn, create_table_sql):
 def convertToBinaryData(filename):
     # Convert digital data to binary format
 
-    print(filename)
     with open(filename, 'rb') as file:
         blobData = file.read()
     return blobData
@@ -184,7 +185,7 @@ def profile():
             names.append("N/A")
     
     query_2 = 'SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email = \'' + str(global_email) + '\';'
-    print("Query 2:", query_2)
+
     c.execute(query_2)
     bid_products_1 = list(c.fetchall())
     highest_Bids = []
@@ -286,10 +287,10 @@ def create_product():
     currentdatetime = datetime.now()
     formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
     parsed_date = datetime.strptime(formatted_date, '%Y-%m-%d %H:%M:%S')
-    print(type(currentdatetime))
-    print(type(biddingtime))
+    #print(type(currentdatetime))
+    #print(type(biddingtime))
     deadlineDate = parsed_date + timedelta(days=int(biddingtime))
-    print(deadlineDate)
+    #print(deadlineDate)
 
     query = "INSERT INTO product(name, seller_email, photo, initial_price, date, increment, deadline_date, description) VALUES (?,?,?,?,?,?,?,?)"
     c.execute(
@@ -393,6 +394,17 @@ def get_product_details():
     response = {"product": result, "bids": topbids}
     return response
 
+@app.route("/getName", methods=["GET"])
+def get_product_name():
+    productID = request.args.get('productID')
+    query = "SELECT p.name FROM product p WHERE p.prod_id=" + str(productID) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+    result = list(c.fetchall())
+    response = {"result": result[0][0]}
+    return response
+
 
 """
 API end point to update a product.
@@ -413,7 +425,7 @@ def update_product_details():
 
     query = "UPDATE product SET name='" + str(productName) + "',initial_price='" + str(initialPrice) + "',deadline_date='" + str(
         deadlineDate) + "',increment='" + str(increment) + "',description='" + str(description) + "' WHERE prod_id=" + str(productId) + ";"
-    print(query)
+    #print(query)
     conn = create_connection(database)
     c = conn.cursor()
     c.execute(query)
@@ -438,7 +450,7 @@ def get_landing_page():
     c = conn.cursor()
     c.execute(query)
     products = list(c.fetchall())
-    print("Products got:", products)
+    #print("Products got:", products)
     highestBids = []
     names = []
     for product in products:
@@ -446,9 +458,9 @@ def get_landing_page():
             str(product[0]) + ";"
         c.execute(query)
         result = list(c.fetchall())
-        print("Results got:", result)
-        print("\n0", result[0])
-        print("\n0,0", result[0][0])
+        #print("Results got:", result)
+        #print("\n0", result[0])
+        #print("\n0,0", result[0][0])
         if (result[0][0] is not None):
             result = result[0]
             highestBids.append(result[1])
@@ -463,7 +475,7 @@ def get_landing_page():
         "products": products,
         "maximumBids": highestBids,
         "names": names}
-    print(response)
+    #print(response)
     return jsonify(response)
 
 
@@ -515,18 +527,56 @@ def create_notification():
 
 @app.route("/notifications/<int:user_id>", methods=["GET"])
 def get_user_notifications(user_id):
-        query = '''SELECT message,detail_page,time_sent 
+        query = '''SELECT notif_id,message,detail_page,time_sent 
                   FROM notifications 
                   WHERE user_id = ? AND read = FALSE'''
         conn = create_connection(database)
         c = conn.cursor()
         c.execute(query, [user_id])
         results = list(c.fetchall())
-        
         if len(results) == 0:
             return {"notifications": "User has no unread notifications."}
         else:
-            return {"notifications": results}
+            notifications = []
+            for row in results:
+                notifications.append({
+                    "notif_id": row[0],
+                    "image": "logo96.png",
+                    "message": row[1],
+                    "detailPage": row[2],
+                    "receivedTime": row[3]
+                })
+            return {"notifications": notifications}
+        
+@app.route("/notifications/<int:notif_id>/read", methods=["PUT"])
+def read_user_notifications(notif_id):
+    try:
+        query = '''UPDATE notifications SET read = TRUE 
+                  WHERE notif_id = ? AND read = FALSE'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query, (notif_id,))
+        conn.commit()
+        response = {}
+        response["result"] = "Added notification successfully"
+        return response
+    except Exception as e:
+        return {"error": "Failed to update notification"}, 500
+    
+@app.route("/notifications/read", methods=["PUT"])
+def read_all_user_notifications():
+    try:
+        query = '''UPDATE notifications SET read = TRUE 
+                  WHERE read = FALSE'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query)
+        conn.commit()
+        response = {}
+        response["result"] = "Added notification successfully"
+        return response
+    except Exception as e:
+        return {"error": "Failed to update notification"}, 500
 
 
 database = r"auction.db"

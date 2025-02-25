@@ -16,6 +16,7 @@ import {
     NavbarText,
 } from 'reactstrap'
 import Notifications from "react-notifications-menu"
+import NotificationCard from './NotificationCard'
 import logo from '../assets/NavLogo.png'
 import cabinet from '../assets/cabinet.jpg'
 
@@ -34,31 +35,32 @@ function Navv(args) {
         toast.info('Logged out')
     }
     
-    const data = 
-        [
-        {
-          message : 'Someone just bid!',
-          detailPage : '/products', 
-          receivedTime:'12h ago'
-        }
-     ]
-    
     const fetchNotifications = async () => {
         try {
             const user_id = 1;
             const response = await axios.get(`/notifications/${user_id}`);
             setNotifications(response.data.notifications);
+            console.log("Notifications", notifications)
         } catch (error) {
             console.error("Error fetching notifications:", error);
         }
     };
+
+    const markAllAsRead = async () => {
+        try {
+          const response = await axios.put(`/notifications/read`);
+          console.log('All notifications marked as read:', response.data);
+        } catch (error) {
+          console.error('Failed to mark notifications as read:', error);
+        }
+      };
 
     // Fetch Notifications on Mount & Every 30s
     useEffect(() => {
         fetchNotifications(); // Initial fetch
 
         const interval = setInterval(() => {
-            fetchNotifications(); // Poll every 30s
+            fetchNotifications(); // Poll every 10s
         }, 10000);
 
         return () => clearInterval(interval); // Cleanup on unmount
@@ -95,7 +97,7 @@ function Navv(args) {
                 />
 
                 <Collapse isOpen={isOpen} navbar>
-                    <Nav className="justify-content-end" navbar>
+                    <Nav navbar>
                         <NavItem>
                             <NavLink
                                 href="/products"
@@ -123,20 +125,13 @@ function Navv(args) {
                                         Logout
                                     </NavLink>
                                 </NavItem>
-                                <Nav></Nav>
-                                <Nav className="ms-auto">
-                                    <NavLink
-                                        style={{ color: 'white' }}
-                                        href="/profile"
-                                    >
-                                        Profile
-                                    </NavLink>
-                                </Nav>
-                                <Nav className="ms-auto">
-                                <Notifications 
-                                data={data} />
-                                </Nav>
-                            </>
+                                    <NavItem>
+                                        <NavLink href="/profile" style={{ color: 'white' }}>
+                                            Profile
+                                        </NavLink>
+                                    </NavItem>
+                                    
+                        </>
                         ) : (
                             <>
                                 <NavItem className="float-right">
@@ -157,7 +152,19 @@ function Navv(args) {
                                 </NavItem>
                             </>
                         )}
+
                     </Nav>
+                    <NavItem className="ms-auto d-flex align-items-center">
+                                        <Notifications
+                                            data={notifications}
+                                            icon='logo24.png'
+                                            imagePosition='right'
+                                            width='415px'
+                                            marginBottom='15px'
+                                            notificationCard={NotificationCard}
+                                            header={{option:{text:'Mark All As Read', onClick: () => markAllAsRead()}}}
+                                        />
+                                    </NavItem>
                 </Collapse>
             </Navbar>
         </div>
