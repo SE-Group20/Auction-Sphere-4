@@ -75,7 +75,8 @@ SELECT
     p.prod_id AS product_id,
     m.recipient_id,
     m.sender_id,
-    p.seller_id
+    p.seller_id,
+    p.deadline_date as deadline_date
 
 FROM
     conversation_set cs

@@ -5,8 +5,6 @@ import { toast } from 'react-toastify'
 import { Stack } from 'react-bootstrap'
 import ConversationCard from './ConversationCard'
 import { Link } from 'react-router-dom'
-import '../../css/bootstrap.min.css'
-
 
 function ConversationsList (data) {
     const [messages, setMessages] = useState([])
@@ -33,7 +31,8 @@ function ConversationsList (data) {
                         <ConversationCard
                             message={message}
                             conversationExchange={false}
-                            className="conversation-wrapper"
+                            style={{backgroundColor: 'white',
+                                color: 'black'}}
                         />
                     </Link>
                 ))
