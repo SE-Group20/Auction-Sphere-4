@@ -73,6 +73,45 @@ def test_update_product(mock_create_call):
         result = app.update_product_details()
         #print("result=", result)
     assert result['message'].__eq__("Updated product successfully")
+
+@patch('app.send_message')
+def test_send_message(mock_send_call):
+    mock_send_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    mock_send_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"message": "Hello!", "recipient_id": 1, "sender_id": 2, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.send_message()
+    assert result['message'].__eq__("Message sent successfully")
+
+@patch('app.read_message')
+def test_read_message_failure(mock_read_call):
+    mock_read_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    mock_read_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"global_id": 123, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.read_message()
+    assert result['message'].__eq__("User has not messaged regarding this product.")
+    
+@patch('app.read_message')
+def test_read_message_success(mock_read_call):
+    mock_read_call = MagicMock()
+    connection = Mock()
+    cursor = connection.cursor()
+    cursor.execute('''INSERT INTO messages (sender_id, recipient_id, product_id, message) 
+            VALUES (?, ?, ?, ?)''', [123, 122, 42, "this is a message"])
+    connection.commit()
+    mock_read_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"global_id": 123, "product_id": 42}
+    with mock.patch("app.request", m):
+        result = app.read_message()
+    assert result['message'].__eq__("Message read successfully")
     
 @patch('app.create_connection')
 def test_create_notif(mock_create_call):
@@ -100,19 +139,14 @@ def test_notification_failure(mock_read_call):
     
 @patch('app.create_connection')
 def test_notification_success(mock_read_call):
-    # Create mock connection and cursor
     connection = Mock()
     cursor = Mock()
     connection.cursor.return_value = cursor
-    # Simulate query results
     cursor.fetchall.return_value = [
         (1, "this is a message", "\\profile", "Now")
     ]
-    # Mock create_connection to return the mock connection
     mock_read_call.return_value = connection
-    # Call the function
     result = app.get_user_notifications(0)
-    # Expected result
     expected_result = {
         "notifications": [
             {
@@ -124,44 +158,30 @@ def test_notification_success(mock_read_call):
             }
         ]
     }
-    # Assertions
     assert result == expected_result
     
 @patch('app.create_connection')
 def test_read_success(mock_read_call):
-    # Create mock connection and cursor
     connection = Mock()
     cursor = Mock()
     connection.cursor.return_value = cursor
-    # Simulate query results
     cursor.fetchall.return_value = [
         ("this is a message", "\\profile", "Now")
     ]
-    # Mock create_connection to return the mock connection
     mock_read_call.return_value = connection
-    # Call the function
     result = app.read_user_notifications(0)
-    # Expected result
     expected_result = "Read notification successfully"
-    # Assertions
     assert result['result'] == expected_result
     
 @patch('app.create_connection')
 def test_read_all_success(mock_read_call):
-    # Create mock connection and cursor
     connection = Mock()
     cursor = Mock()
     connection.cursor.return_value = cursor
-    # Simulate query results
     cursor.fetchall.return_value = [
         ("this is a message", "\\profile", "Now")
     ]
-    # Mock create_connection to return the mock connection
     mock_read_call.return_value = connection
-    # Call the function
     result = app.read_all_user_notifications(0)
-    # Expected result
     expected_result = "Read all notifications successfully"
-    # Assertions
     assert result['result'] == expected_result
-    

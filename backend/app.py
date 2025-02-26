@@ -5,14 +5,14 @@ import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
 
+from services.chat import ChatService
 from pytest import param
 from notification import NotificationService
 
 app = Flask(__name__)
 CORS(app)
 
-notificationService = NotificationService()
-
+chatService = ChatService()
 
 global_email = None
 global_id = None
@@ -76,7 +76,7 @@ def signup():
     response = {}
     if (result[0][0] == 0): #Email doesn't exist
         query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
-            str(contact) + "';"
+                str(contact) + "';"
         c.execute(query)
         result = list(c.fetchall())
 
@@ -85,7 +85,8 @@ def signup():
             return jsonify(response), 409
         else:
             query = "INSERT INTO users(first_name, last_name, email, contact_number, password) VALUES('" + str(
-                firstName) + "','" + str(lastName) + "','" + str(email) + "','" + str(contact) + "','" + str(password) + "');"
+                firstName) + "','" + str(lastName) + "','" + str(email) + "','" + str(contact) + "','" + str(
+                password) + "');"
             c.execute(query)
             conn.commit()
             response["message"] = "Added successfully"
@@ -104,9 +105,9 @@ If the email and password are correct, login is successful else user is asked to
 
 
 @app.route("/login", methods=["POST"])
-
-def login(): 
+def login():
     global global_email
+    global global_id
     email = request.get_json()['email']
     password = request.get_json()['password']
 
@@ -115,7 +116,7 @@ def login():
 
     # check if email and password pair exists
     query = "SELECT * FROM users WHERE email='" + \
-        str(email) + "' AND password='" + str(password) + "';"
+            str(email) + "' AND password='" + str(password) + "';"
     c.execute(query)
     result = list(c.fetchall())
     response = {}
@@ -145,15 +146,16 @@ It also displays the specific product cards for the user.
 It shows the products the user has put for sale and the products for which the user has submitted a bid.
 """
 
+
 @app.route('/profile', methods=["POST"])
 def profile():
     global global_email
-    
+
     # create db connection
     conn = create_connection(database)
     c = conn.cursor()
 
-    query = 'SELECT * FROM users WHERE email=\'' + str(global_email) + "\';" 
+    query = 'SELECT * FROM users WHERE email=\'' + str(global_email) + "\';"
     c.execute(query)
     result = list(c.fetchall())
 
@@ -165,28 +167,31 @@ def profile():
     c.execute(query_bid)
     result_bid = list(c.fetchall())
 
-    query_sell = 'SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE seller_email=\'' + str(global_email) + '\'ORDER BY date DESC LIMIT 10;'
+    query_sell = 'SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE seller_email=\'' + str(
+        global_email) + '\'ORDER BY date DESC LIMIT 10;'
     conn = create_connection(database)
     c = conn.cursor()
     c.execute(query_sell)
     products = list(c.fetchall())
     highestBids = []
     names = []
-    for product in products: 
-        query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) +";"
+    for product in products:
+        query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) + ";"
         c.execute(query)
         result_bids = list(c.fetchall())
-        if(result_bids[0][0] is not None): 
+        if (result_bids[0][0] is not None):
             result_bids = result_bids[0]
             highestBids.append(result_bids[1])
-            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bids[0]) +"';"
+            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bids[0]) + "';"
             c.execute(query)
             names.append(list(c.fetchall())[0])
-        else: 
+        else:
             highestBids.append(-1)
             names.append("N/A")
-    
-    query_2 = 'SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email = \'' + str(global_email) + '\';'
+
+    query_2 = 'SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email = \'' + str(
+        global_email) + '\';'
+    print("Query 2:", query_2)
 
     c.execute(query_2)
     bid_products_1 = list(c.fetchall())
@@ -194,16 +199,16 @@ def profile():
     names_bids = []
 
     for product in bid_products_1:
-        query_products ="SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) +";"
+        query_products = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) + ";"
         c.execute(query_products)
         result_bid_products = list(c.fetchall())
-        if(result_bid_products[0][0] is not None): 
+        if (result_bid_products[0][0] is not None):
             result_bid_products = result_bid_products[0]
             highest_Bids.append(result_bid_products[1])
-            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bid_products[0]) +"';"
+            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bid_products[0]) + "';"
             c.execute(query)
             names_bids.append(list(c.fetchall())[0])
-        else: 
+        else:
             highest_Bids.append(-1)
             names_bids.append("N/A")
 
@@ -215,7 +220,7 @@ def profile():
     response['no_products'] = result_sell[0][0]
     response['no_bids'] = result_bid[0][0]
     response['products'] = products
-    response['maximum_bids'] = highestBids 
+    response['maximum_bids'] = highestBids
     response['names'] = names
     response['bid_products'] = bid_products_1
     response['bid_bids'] = highest_Bids
@@ -246,7 +251,7 @@ def create_bid():
 
     # get initial price wanted by seller
     select_query = "SELECT initial_price FROM product WHERE prod_id='" + \
-        str(productId) + "';"
+                   str(productId) + "';"
     c.execute(select_query)
     result = list(c.fetchall())
     response = {}
@@ -411,7 +416,7 @@ def get_product_details():
 
     # get highest 10 bids
     query = "SELECT users.first_name, users.last_name, bids.bid_amount FROM users INNER JOIN bids ON bids.email = users.email WHERE bids.prod_id=" + \
-        str(productID) + " ORDER BY bid_amount DESC LIMIT 10;"
+            str(productID) + " ORDER BY bid_amount DESC LIMIT 10;"
     c.execute(query)
     topbids = list(c.fetchall())
 
@@ -430,6 +435,16 @@ def get_product_name():
     return response
 
 
+@app.route("/product/<product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    query = "DELETE FROM product WHERE prod_id=" + str(product_id) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+    conn.commit()
+
+    return "Product deleted"
+
 """
 API end point to update a product.
 This API is used while updating the details of a product.
@@ -447,9 +462,12 @@ def update_product_details():
     description = request.get_json()['description']
     increment = request.get_json()['increment']
 
-    query = "UPDATE product SET name='" + str(productName) + "',initial_price='" + str(initialPrice) + "',deadline_date='" + str(
-        deadlineDate) + "',increment='" + str(increment) + "',description='" + str(description) + "' WHERE prod_id=" + str(productId) + ";"
-    #print(query)
+    query = "UPDATE product SET name='" + str(productName) + "',initial_price='" + str(
+        initialPrice) + "',deadline_date='" + str(
+        deadlineDate) + "',increment='" + str(increment) + "',description='" + str(
+        description) + "' WHERE prod_id=" + str(productId) + ";"
+    print(query)
+
     conn = create_connection(database)
     c = conn.cursor()
     c.execute(query)
@@ -479,7 +497,7 @@ def get_landing_page():
     names = []
     for product in products:
         query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + \
-            str(product[0]) + ";"
+                str(product[0]) + ";"
         c.execute(query)
         result = list(c.fetchall())
         #print("Results got:", result)
@@ -489,7 +507,7 @@ def get_landing_page():
             result = result[0]
             highestBids.append(result[1])
             query = "SELECT first_name, last_name FROM users WHERE email='" + \
-                str(result[0]) + "';"
+                    str(result[0]) + "';"
             c.execute(query)
             names.append(list(c.fetchall())[0])
         else:
@@ -511,12 +529,31 @@ def get_top_products():
     c = conn.cursor()
     c.execute(query)
     products = list(c.fetchall())
-    if products.__len__ ==0:
+    if products.__len__ == 0:
         print("No data found")
     response = {
         "products": products}
     return jsonify(response)
 
+
+@app.route("/message", methods=["POST"])
+def send_message():
+    product_id = request.get_json()['product_id']
+    sender_id = request.get_json()['sender_id']
+    recipient_id = request.get_json()['recipient_id']
+    message = request.get_json()['message']
+
+    return chatService.send_message(message, recipient_id, sender_id, product_id)
+
+@app.route("/messages", methods=["GET"])
+def get_messages():
+    return chatService.get_messages(global_id)
+
+@app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
+def read_message(product_id, bidder_id):
+    return chatService.read_message(global_id,bidder_id, product_id)
+
+  
 """
 API end point for new notification creation.
 This API is used to create new notifications for users.
@@ -612,11 +649,24 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
     email TEXT UNIQUE, 
     password TEXT NOT NULL);"""
 
-create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email));"""
+create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_id INTEGER NOT NULL, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email), FOREIGN KEY(seller_id) references users(user_id));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
 
 create_table_claims = """CREATE TABLE IF NOT EXISTS claims(prod_id INTEGER, email TEXT NOT NULL, expiry_date TEXT NOT NULL, claim_status INTEGER, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id));"""
+
+create_message_table = """CREATE TABLE IF NOT EXISTS messages(
+    message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    recipient_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    time_sent DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT 0,
+    FOREIGN KEY (message_id) REFERENCES users (user_id)
+    FOREIGN KEY (sender_id) REFERENCES users (user_id)
+    FOREIGN KEY (product_id) REFERENCES product (prod_id)
+)"""
 
 
 create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
@@ -629,6 +679,7 @@ create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
     
     )"""
 
+
 """Create Connection to database"""
 conn = create_connection(database)
 if conn is not None:
@@ -636,7 +687,12 @@ if conn is not None:
     create_table(conn, create_product_table)
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
+
+    create_table(conn, create_message_table)
     create_table(conn, create_notification_table)
+    cursor = conn.cursor()
+    conn.commit()
+
 else:
     print("Error! Cannot create the database connection")
 
