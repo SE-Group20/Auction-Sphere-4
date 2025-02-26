@@ -379,6 +379,13 @@ def get_product_details():
     return response
 
 
+@app.route("/product/<product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    query = "DELETE FROM product WHERE prod_id=" + str(product_id) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+
 """
 API end point to update a product.
 This API is used while updating the details of a product.
