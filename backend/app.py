@@ -105,6 +105,7 @@ If the email and password are correct, login is successful else user is asked to
 @app.route("/login", methods=["POST"])
 def login():
     global global_email
+    global global_id
     email = request.get_json()['email']
     password = request.get_json()['password']
 
@@ -488,10 +489,13 @@ def send_message():
 
     return chatService.send_message(message, recipient_id, sender_id, product_id)
 
+@app.route("/messages", methods=["GET"])
+def get_messages():
+    return chatService.get_messages(global_id)
 
-@app.route("/message/product/<product_id>", methods=["GET"])
-def read_message(product_id):
-    return chatService.read_message(global_id, product_id)
+@app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
+def read_message(product_id, bidder_id):
+    return chatService.read_message(global_id,bidder_id, product_id)
 
 
 database = r"auction.db"
@@ -503,7 +507,7 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
     email TEXT UNIQUE, 
     password TEXT NOT NULL);"""
 
-create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email));"""
+create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_id INTEGER NOT NULL, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email), FOREIGN KEY(seller_id) references users(user_id));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
 
@@ -530,6 +534,10 @@ if conn is not None:
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
     create_table(conn, create_message_table)
+
+    cursor = conn.cursor()
+    conn.commit()
+
 else:
     print("Error! Cannot create the database connection")
 

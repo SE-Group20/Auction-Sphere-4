@@ -81,6 +81,14 @@ function Navv(args) {
                                 </NavItem>
                                 <NavItem>
                                     <NavLink
+                                        href="/messages"
+                                        style={{ color: 'white' }}
+                                    >
+                                        Messages
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
                                         style={{ color: 'white' }}
                                         href="/"
                                         onClick={handleLogout}
