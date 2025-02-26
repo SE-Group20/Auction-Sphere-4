@@ -106,17 +106,18 @@ def test_notification_success(mock_read_call):
     connection.cursor.return_value = cursor
     # Simulate query results
     cursor.fetchall.return_value = [
-        ("this is a message", "\\profile", "Now")
+        (1, "this is a message", "\\profile", "Now")
     ]
     # Mock create_connection to return the mock connection
     mock_read_call.return_value = connection
     # Call the function
-    result = app.get_user_notifications(1)
+    result = app.get_user_notifications(0)
     # Expected result
     expected_result = {
         "notifications": [
             {
-                "image": "logo192.png",
+                "notif_id": 1,
+                "image": "logo96.png",
                 "message": "this is a message",
                 "detailPage": "\\profile",
                 "receivedTime": "Now"
@@ -125,4 +126,42 @@ def test_notification_success(mock_read_call):
     }
     # Assertions
     assert result == expected_result
+    
+@patch('app.create_connection')
+def test_read_success(mock_read_call):
+    # Create mock connection and cursor
+    connection = Mock()
+    cursor = Mock()
+    connection.cursor.return_value = cursor
+    # Simulate query results
+    cursor.fetchall.return_value = [
+        ("this is a message", "\\profile", "Now")
+    ]
+    # Mock create_connection to return the mock connection
+    mock_read_call.return_value = connection
+    # Call the function
+    result = app.read_user_notifications(0)
+    # Expected result
+    expected_result = "Read notification successfully"
+    # Assertions
+    assert result['result'] == expected_result
+    
+@patch('app.create_connection')
+def test_read_all_success(mock_read_call):
+    # Create mock connection and cursor
+    connection = Mock()
+    cursor = Mock()
+    connection.cursor.return_value = cursor
+    # Simulate query results
+    cursor.fetchall.return_value = [
+        ("this is a message", "\\profile", "Now")
+    ]
+    # Mock create_connection to return the mock connection
+    mock_read_call.return_value = connection
+    # Call the function
+    result = app.read_all_user_notifications(0)
+    # Expected result
+    expected_result = "Read all notifications successfully"
+    # Assertions
+    assert result['result'] == expected_result
     

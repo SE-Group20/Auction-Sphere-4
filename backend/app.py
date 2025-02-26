@@ -74,14 +74,15 @@ def signup():
 
     result = list(c.fetchall())
     response = {}
-    if (result[0][0] == 0):
+    if (result[0][0] == 0): #Email doesn't exist
         query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
             str(contact) + "';"
         c.execute(query)
         result = list(c.fetchall())
 
-        if (result[0][0] != 0):
+        if (result[0][0] != 0): #If contact number exists
             response["message"] = "An account with this contact already exists"
+            return jsonify(response), 409
         else:
             query = "INSERT INTO users(first_name, last_name, email, contact_number, password) VALUES('" + str(
                 firstName) + "','" + str(lastName) + "','" + str(email) + "','" + str(contact) + "','" + str(password) + "');"
@@ -90,6 +91,7 @@ def signup():
             response["message"] = "Added successfully"
     else:
         response["message"] = "An account with this email already exists"
+        return jsonify(response), 409
     return response
 
 
@@ -206,10 +208,10 @@ def profile():
             names_bids.append("N/A")
 
     response = {}
-    response['first_name'] = result[0][0]
-    response['last_name'] = result[0][1]
-    response['contact_no'] = result[0][2]
-    response['email'] = result[0][3]
+    response['first_name'] = result[0][1]
+    response['last_name'] = result[0][2]
+    response['contact_no'] = result[0][3]
+    response['email'] = result[0][4]
     response['no_products'] = result_sell[0][0]
     response['no_bids'] = result_bid[0][0]
     response['products'] = products
@@ -261,6 +263,28 @@ def create_bid():
         conn.commit()
 
         response["message"] = "Saved Bid"
+    return jsonify(response)
+
+"""
+API end point to get a previous bid.
+This API allows users to retrieve a previous bid by taking in a productID
+They can extract the bid information, using it to get information like current bid and previous 
+"""
+
+@app.route("/bid/get", methods=["GET"])
+def get_bid():
+    # Get relevant data
+    productID = request.args.get('productID')
+    # create db connection
+    conn = create_connection(database)
+    c = conn.cursor()
+    # get initial price wanted by seller
+    select_query = "SELECT * FROM bids WHERE prod_id='" + \
+        str(productID) + "';"
+    c.execute(select_query)
+    result = list(c.fetchall())
+    response = {}
+    response["result"] = result
     return jsonify(response)
 
 
@@ -558,25 +582,25 @@ def read_user_notifications(notif_id):
         c.execute(query, (notif_id,))
         conn.commit()
         response = {}
-        response["result"] = "Added notification successfully"
+        response["result"] = "Read notification successfully"
         return response
     except Exception as e:
         return {"error": "Failed to update notification"}, 500
     
 @app.route("/notifications/read", methods=["PUT"])
-def read_all_user_notifications():
+def read_all_user_notifications(user_id):
     try:
         query = '''UPDATE notifications SET read = TRUE 
-                  WHERE read = FALSE'''
+                  WHERE read = FALSE and user_id = ?'''
         conn = create_connection(database)
         c = conn.cursor()
-        c.execute(query)
+        c.execute(query, (user_id,))
         conn.commit()
         response = {}
-        response["result"] = "Added notification successfully"
+        response["result"] = "Read all notifications successfully"
         return response
     except Exception as e:
-        return {"error": "Failed to update notification"}, 500
+        return {"error": "Failed to update notifications"}, 500
 
 
 database = r"auction.db"

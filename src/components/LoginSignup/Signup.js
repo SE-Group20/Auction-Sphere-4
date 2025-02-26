@@ -26,23 +26,64 @@ const Signup = () => {
     const navigate = useNavigate()
     const handleChange = (event) => {
         setFormData({ ...formData, [event.target.name]: event.target.value })
+        setErrors((prevErrors) => ({ ...prevErrors, [event.target.name]: '' }));
     }
+
+    const formatPhoneNumber = (value) => {
+        const numbers = value.replace(/\D/g, '');
+
+        if (numbers.length <= 3) return numbers;
+        if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
+        return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6, 10)}`;
+    };
+
+    const handleChangePhone = (event) => {
+        const formattedNumber = formatPhoneNumber(event.target.value)
+        setFormData({ ...formData, [event.target.name]: formattedNumber })
+        setErrors((prevErrors) => ({ ...prevErrors, [event.target.name]: '' }));
+    }
+
+    const formatFieldName = (field) => {
+        return field
+            .replace(/([A-Z])/g, ' $1')
+            .trim()
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault()
+        let newErrors = {};
+        Object.keys(formData).forEach((key) => {
+            if (!formData[key].trim()) {
+                newErrors[key] = `${formatFieldName(key)} is required`;
+            }
+        });
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error('Fill out all fields before submitting');
+            return;
+        }
         if (formData.password !== formData.confirmPassword)
             toast.error('Passwords do not match')
+        else if (formData.password === '')
+            toast.error('Must have a password')
         else {
             console.log(formData)
             try {
-                let response = await axios.post(`${URL}/signup`, formData)
+                const strippedNumber = formData.contact.replace(/\D/g, '');
+                const updatedFormData = { ...formData, contact: strippedNumber };
+
+                const response = await axios.post(`${URL}/signup`, updatedFormData);
                 console.log(response)
                 navigate('/login')
                 // alert("Form submitted successfully I think");
             } catch (e) {
-                toast.error('Something went wrong')
+                const errorMessage = e.response.data.message;
+                toast.error(errorMessage);
                 console.log(e)
             }
         }
+        
     }
     const [formData, setFormData] = useState({
         firstName: '',
@@ -53,6 +94,7 @@ const Signup = () => {
         password: '',
         confirmPassword: '',
     })
+    const [errors, setErrors] = useState({});
     return (
         <body
             style={{
@@ -94,7 +136,12 @@ const Signup = () => {
                                                 onChange={(e) =>
                                                     handleChange(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.firstName ? 'red' : '',
+                                                    borderWidth: errors.firstName ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.firstName && <small style={{ color: 'red' }}>{errors.firstName}</small>}
                                         </FormGroup>
                                         <FormGroup>
                                             <Label for="LastName">
@@ -109,7 +156,12 @@ const Signup = () => {
                                                 onChange={(e) =>
                                                     handleChange(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.firstName ? 'red' : '',
+                                                    borderWidth: errors.firstName ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.lastName && <small style={{ color: 'red' }}>{errors.lastName}</small>}
                                         </FormGroup>
                                         <FormGroup>
                                             <Label for="Contact">
@@ -118,26 +170,36 @@ const Signup = () => {
                                             <Input
                                                 id="Contact"
                                                 name="contact"
-                                                placeholder="Phone Number"
+                                                placeholder="(123) 456-7890"
                                                 type="text"
                                                 value={formData.contact}
                                                 onChange={(e) =>
-                                                    handleChange(e)
+                                                    handleChangePhone(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.contact ? 'red' : '',
+                                                    borderWidth: errors.contact ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.contact && <small style={{ color: 'red' }}>{errors.contact}</small>}
                                         </FormGroup>
                                         <FormGroup>
                                             <Label for="Email">Email</Label>
                                             <Input
                                                 id="Email"
                                                 name="email"
-                                                placeholder="abc@gamil.com"
+                                                placeholder="abc@gmail.com"
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) =>
                                                     handleChange(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.email ? 'red' : '',
+                                                    borderWidth: errors.email ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.email && <small style={{ color: 'red' }}>{errors.email}</small>}
                                         </FormGroup>
                                         {/* <FormGroup>
           <Label for="Address">Address</Label>
@@ -163,7 +225,12 @@ const Signup = () => {
                                                 onChange={(e) =>
                                                     handleChange(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.password ? 'red' : '',
+                                                    borderWidth: errors.password ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.password && <small style={{ color: 'red' }}>{errors.password}</small>}
                                         </FormGroup>
                                         <FormGroup>
                                             <Label for="ConfirmPassword">
@@ -178,7 +245,12 @@ const Signup = () => {
                                                 onChange={(e) =>
                                                     handleChange(e)
                                                 }
+                                                style={{
+                                                    borderColor: errors.confirmPassword ? 'red' : '',
+                                                    borderWidth: errors.confirmPassword ? '2px' : '',
+                                                }}
                                             />
+                                            {errors.confirmPassword && <small style={{ color: 'red' }}>{errors.confirmPassword}</small>}
                                         </FormGroup>
                                         <Button color="primary">Submit</Button>
                                     </Form>
