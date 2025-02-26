@@ -132,9 +132,9 @@ def test_notification_failure(mock_read_call):
     cursor = connection.cursor()
     mock_read_call.return_value = connection
     m = mock.MagicMock()
-    m.values = {"user_id": 1}
+    m.values = {"global_id": 123}
     with mock.patch("app.request", m):
-        result = app.get_user_notifications(1)
+        result = app.get_user_notifications()
     assert result['notifications'].__eq__("User has no unread notifications.")
     
 @patch('app.create_connection')
@@ -146,18 +146,23 @@ def test_notification_success(mock_read_call):
         (1, "this is a message", "\\profile", "Now")
     ]
     mock_read_call.return_value = connection
-    result = app.get_user_notifications(0)
+    result = app.get_user_notifications()
+    
+    m = mock.MagicMock()
+    m.values = {"global_id": 1}
+    
     expected_result = {
         "notifications": [
             {
                 "notif_id": 1,
-                "image": "logo96.png",
+                "image": "../src/assets/logo96.png",
                 "message": "this is a message",
                 "detailPage": "\\profile",
                 "receivedTime": "Now"
             }
         ]
     }
+    print(result)
     assert result == expected_result
     
 @patch('app.create_connection')
@@ -182,6 +187,23 @@ def test_read_all_success(mock_read_call):
         ("this is a message", "\\profile", "Now")
     ]
     mock_read_call.return_value = connection
-    result = app.read_all_user_notifications(0)
+    result = app.read_all_user_notifications()
     expected_result = "Read all notifications successfully"
     assert result['result'] == expected_result
+    
+@patch('app.create_connection')
+def test_get_bid_success(mock_create_connection):
+    mock_connection = Mock()
+    mock_cursor = Mock()
+    mock_connection.cursor.return_value = mock_cursor
+    mock_cursor.fetchall.return_value = [
+        (1, "user1@example.com", 100, "2025-02-26 09:28:31")
+    ]
+    mock_create_connection.return_value = mock_connection
+    
+    with app.app.test_request_context('/bid/get', query_string={'productID': '1'}):
+        response = app.get_bid()
+    
+    expected_response = {"result": [[1, "user1@example.com", 100, "2025-02-26 09:28:31"]]}
+    
+    assert response.get_json() == expected_response
