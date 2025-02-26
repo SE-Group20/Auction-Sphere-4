@@ -11,6 +11,8 @@ import ConversationCard from './ConversationCard'
 function MessagesListByConversation () {
     const { product_id, bidder_id } = useParams()
     const [messages, setMessages] = useState([])
+    const [newMessage, setNewMessage] = useState("")
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -22,6 +24,22 @@ function MessagesListByConversation () {
         }
         fetchData()
     }, [])
+
+    const handleSubmit = async () => {
+        try {
+            const lastMessage = messages[0]
+            await axios.post(`${URL}/message`, {
+                product_id: lastMessage[7],
+                sender_id: lastMessage[9],
+                recipient_id: lastMessage[8],
+                message: newMessage
+            })
+        } catch (e) {
+            console.log(e)
+            toast.error('Error submitting message')
+
+        }
+    }
 
     return (
         <>
@@ -54,13 +72,32 @@ function MessagesListByConversation () {
                             >
                                 <h3 style={{ color: 'white' }}>Messages</h3>
                                 <Stack gap={3}>
-                                    {messages ? messages.map((message) => (
-                                        <ConversationCard
-                                            message={message}
-                                            conversationExchange={true}
-                                        />
-                                    )) : 'No messages found'}
+                                    {messages
+                                        ? messages.map((message) => (
+                                              <ConversationCard
+                                                  message={message}
+                                                  conversationExchange={true}
+                                              />
+                                          ))
+                                        : 'No messages found'}
                                 </Stack>
+
+                                <div className="form-floating">
+                                    <textarea
+                                        className="form-control"
+                                        placeholder="Your Message here"
+                                        id="newMessage"
+                                        onChange={(e) => setNewMessage(e)}
+                                    ></textarea>
+                                    <label for="newMessage">New Message</label>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={handleSubmit}
+                                    >
+                                        Submit Message
+                                    </button>
+                                </div>
                             </div>
                         </>
                     ) : (
