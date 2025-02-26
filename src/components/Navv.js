@@ -35,6 +35,10 @@ function Navv(args) {
         toast.info('Logged out')
     }
     
+    /**
+     * This function fetchs all notifications for the current user
+     * Uses global id in app.py to get current user
+     */
     const fetchNotifications = async () => {
         try {
             const response = await axios.get(`/notifications/get`);
@@ -45,6 +49,9 @@ function Navv(args) {
         }
     };
 
+    /**
+     * This function marks all notifications for the current user as read
+     */
     const markAllAsRead = async () => {
         try {
           const response = await axios.put(`/notifications/read`) 
@@ -54,15 +61,18 @@ function Navv(args) {
         }
       };
 
-    // Fetch Notifications on Mount & Every 30s
+    /**
+     * This function featchesall notifications for the current user
+     * Every 10 seconds, or initially
+     */
     useEffect(() => {
-        fetchNotifications(); // Initial fetch
+        fetchNotifications(); 
 
         const interval = setInterval(() => {
             fetchNotifications(); // Poll every 10s
         }, 10000);
 
-        return () => clearInterval(interval); // Cleanup on unmount
+        return () => clearInterval(interval);
     }, []);
     
 
@@ -161,6 +171,9 @@ function Navv(args) {
                         )}
 
                     </Nav>
+                    /**
+                    Notifications, uses the NotificationCard as a template
+                     */
                     <NavItem className="ms-auto d-flex align-items-center">
                                         <Notifications
                                             data={notifications}
