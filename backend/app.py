@@ -591,8 +591,8 @@ This API is used to retrieve notifications for users.
 Here, notifications, message details, links, and time_sent
 are extracted from the database.
 """
-@app.route("/notifications/<int:user_id>", methods=["GET"])
-def get_user_notifications(user_id):
+@app.route("/notifications/get", methods=["GET"])
+def get_user_notifications():
         user_id = global_id
         query = '''SELECT notif_id,message,detail_page,time_sent 
                   FROM notifications 

@@ -37,8 +37,7 @@ function Navv(args) {
     
     const fetchNotifications = async () => {
         try {
-            const user_id = 1;
-            const response = await axios.get(`/notifications/${user_id}`);
+            const response = await axios.get(`/notifications/get`);
             setNotifications(response.data.notifications);
             console.log("Notifications", notifications)
         } catch (error) {
