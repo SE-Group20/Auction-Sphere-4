@@ -12,18 +12,18 @@
 
 [![DOI](https://zenodo.org/badge/545100230.svg)](https://doi.org/10.5281/zenodo.14027540)
 
-Repository for CSC 510 Software Engineering project 1, created by Group : Jonathan Kurian, Eleanor Maye
+Repository for CSC 510 Software Engineering Project 2, created by Group : Jonathan Kurian, Eleanor Maye
 
 Click on the image below to view the demo video of the project
 
 <h2>Demo Video of the previous project</h2>
-https://drive.google.com/file/d/1md_n8eUBSGGTeWp78R8wSBhKQ9uqrqb5/view?usp=sharing
-
-<h2>Demo Video of the improved project</h2>
 https://drive.google.com/file/d/1-1IImCdds80cHaB8_4Agh7kr-HKMnpRh/view?usp=sharing
 
+<h2>Demo Video of the improved project</h2>
+[https://www.youtube.com/watch?v=md9xEzERsrU](https://www.youtube.com/watch?v=md9xEzERsrU)
+
 <h2> Animated Video on Auction Sphere </h2>
-https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing
+[https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing](https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing) (created by previous iteration teams)
 
 ## About Auction-Sphere
 
@@ -35,6 +35,9 @@ Congratulations, you have come to the perfect place: the **Auction Sphere**
 Auction Sphere is an auctioning system where people can bid on exciting items and also put items up for sale. Every item has a bidding window, and the item goes to the highest bidder by the end of that window.
 
 On the products, people can view all the latest items being put up for sale and their respective highest bids. On the product details page, apart from product details, people can view the latest bids as well as the highest bid, and can also place a bid. It's upto the seller to decide the minimum price of the product, as well as bid increments.
+
+## Back up branch
+An archive branch of the previous version is stored in the branch "archive".
 
 ## Built with
 
