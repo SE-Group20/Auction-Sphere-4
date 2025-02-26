@@ -9,6 +9,10 @@ class ChatService:
     except sqlite3.Error as e:
         print(e)
 
+    """
+    send_message adds a new message to the messages table using the provided parameters of
+    message, recipient_id, sender_id, product_id
+    """
     def send_message(self, message, recipient_id, sender_id, product_id):
         query= '''INSERT INTO messages (sender_id, recipient_id, product_id, message) 
             VALUES (?, ?, ?, ?)'''
@@ -19,17 +23,27 @@ class ChatService:
 
         return {"message": "Message sent successfully"}
 
-
+    """
+    user_is_product_seller tests if user_id is the user_id of the specified product
+    """
     def user_is_product_seller(self, product_id, user_id):
         query= '''SELECT EXISTS(SELECT 1 FROM product WHERE prod_id = ? AND seller_id = ?)'''
         self.cursor.execute(query, (product_id, user_id))
         return self.cursor.fetchone()[0]
 
+    """
+    set_messages_to_read sets the status of mesesages to read given the user ids
+    """
     def set_messages_to_read(self, product_id, current_user, sender_id):
         query = '''UPDATE messages SET read = 1 WHERE product_id = ? AND recipient_id = ? AND sender_id = ?'''
         self.cursor.execute(query, (product_id, current_user, sender_id))
         self.conn.commit()
 
+
+    """
+    read_message sends an sql query to return all messages for a given conversation on a product
+    by providing the current user_id, the bidder's user_id, and the product_id
+    """
     def read_message(self, user_id, bidder_user_id, product_id):
         query = '''SELECT 
         u.first_name,
@@ -56,6 +70,9 @@ class ChatService:
             self.set_messages_to_read(product_id, user_id, results[8])
             return results
 
+    """
+    get_messages returns a list a of the last conversation messasges for each conversation user_id is involved in
+    """
     def get_messages(self, user_id):
         print(user_id)
         query = '''WITH conversation_set AS (
