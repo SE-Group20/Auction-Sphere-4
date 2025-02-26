@@ -13,12 +13,13 @@ import axios from 'axios'
 import { URL } from '../global'
 import '../css/card.css'
 import { toast } from 'react-toastify'
+import '../css/bootstrap.min.css'
 
 /**
  * This component displays a single product card on the products page.
  */
 
-const ProductCard = ({ product, maxBid, name }) => {
+const ProductCard = ({ product, maxBid, name, profileView = false }) => {
     const [url, setUrl] = useState(`/details/${product[0]}`)
     const [image, setImage] = useState('https://picsum.photos/900/180')
 
@@ -36,6 +37,15 @@ const ProductCard = ({ product, maxBid, name }) => {
     useEffect(() => {
         fetchImage()
     }, [])
+
+    const handleDelete = async () => {
+        try {
+            await axios.delete(`${URL}/product/${product[0]}`);
+            window.location.reload()
+        } catch (e) {
+            toast.error(e)
+        }
+    }
 
     return (
         <>
@@ -60,6 +70,13 @@ const ProductCard = ({ product, maxBid, name }) => {
                     <Button color="warning" href={url}>
                         Details
                     </Button>
+                    {profileView ?
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                        >Delete</Button>
+                        : ''
+                    }
                 </CardBody>
             </Card>
         </>

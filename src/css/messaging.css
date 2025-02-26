@@ -1,0 +1,29 @@
+.conversation-wrapper  {
+    background-color: white;
+    color: black;
+    margin: 5px;
+    text-decoration: none
+}
+
+.unread {
+    background-color: #e17055;
+}
+
+a {
+    text-decoration: none;
+}
+
+.conversation-wrapper:link {
+    color: black;
+    text-decoration: none
+}
+
+.conversation-wrapper:visited {
+    color: black;
+    text-decoration: none
+}
+
+.clickable .conversation-wrapper:hover {
+    cursor: pointer;
+    text-decoration: none
+}

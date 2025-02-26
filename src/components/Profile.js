@@ -134,6 +134,7 @@ const Profile = () => {
                                             product={product}
                                             maxBid={data.maximum_bids[index]}
                                             name={data.names[index]}
+                                            profileView={true}
                                         />
                                     ))
                                 ) : (

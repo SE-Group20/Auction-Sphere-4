@@ -41,6 +41,21 @@ const ProductDetails = () => {
             }
         }
     }, [])
+
+    const sendMessage = async () => {
+        try {
+            let response = await axios.post(`${URL}/message`, {
+                product_id: id,
+                recipient_id: product[0],
+                message: "hi I am interested in your product"
+            })
+            console.log(response)
+            toast.success("Message sent successfully. Check message inbox")
+        } catch (error) {
+            toast.error(error)
+        }
+    }
+
     return (
         <>
             <div
@@ -141,6 +156,12 @@ const ProductDetails = () => {
                                                 sellerEmail={product[3]}
                                             />
                                         )}
+                                        <Button
+                                            color="info"
+                                            onClick={() => sendMessage()}
+                                        >
+                                            Message Seller
+                                        </Button>
                                     </>
                                 )}
                             </CardText>

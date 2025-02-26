@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
+import axios from 'axios'
 import {
     Collapse,
     Navbar,
@@ -14,6 +15,9 @@ import {
     DropdownItem,
     NavbarText,
 } from 'reactstrap'
+import Notifications from "react-notifications-menu"
+import NotificationCard from './NotificationCard'
+import notifLogo from '../assets/logo24.png'
 import logo from '../assets/NavLogo.png'
 
 /**
@@ -22,13 +26,55 @@ import logo from '../assets/NavLogo.png'
 
 function Navv(args) {
     const [isOpen, setIsOpen] = useState(true)
-
+    const [notifications, setNotifications] = useState([]);
+    
     const toggle = () => setIsOpen(!isOpen)
     const handleLogout = () => {
         localStorage.clear()
         window.location.reload()
         toast.info('Logged out')
     }
+    
+    /**
+     * This function fetchs all notifications for the current user
+     * Uses global id in app.py to get current user
+     */
+    const fetchNotifications = async () => {
+        try {
+            const response = await axios.get(`/notifications/get`);
+            setNotifications(response.data.notifications);
+            console.log("Notifications", notifications)
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        }
+    };
+
+    /**
+     * This function marks all notifications for the current user as read
+     */
+    const markAllAsRead = async () => {
+        try {
+          const response = await axios.put(`/notifications/read`) 
+          console.log('All notifications marked as read:', response.data);
+        } catch (error) {
+          console.error('Failed to mark notifications as read:', error);
+        }
+      };
+
+    /**
+     * This function featchesall notifications for the current user
+     * Every 10 seconds, or initially
+     */
+    useEffect(() => {
+        fetchNotifications(); 
+
+        const interval = setInterval(() => {
+            fetchNotifications(); // Poll every 10s
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, []);
+    
 
     return (
         <div>
@@ -60,7 +106,7 @@ function Navv(args) {
                 />
 
                 <Collapse isOpen={isOpen} navbar>
-                    <Nav className="justify-content-end" navbar>
+                    <Nav navbar>
                         <NavItem>
                             <NavLink
                                 href="/products"
@@ -81,6 +127,14 @@ function Navv(args) {
                                 </NavItem>
                                 <NavItem>
                                     <NavLink
+                                        href="/messages"
+                                        style={{ color: 'white' }}
+                                    >
+                                        Messages
+                                    </NavLink>
+                                </NavItem>
+                                <NavItem>
+                                    <NavLink
                                         style={{ color: 'white' }}
                                         href="/"
                                         onClick={handleLogout}
@@ -88,16 +142,13 @@ function Navv(args) {
                                         Logout
                                     </NavLink>
                                 </NavItem>
-                                <Nav></Nav>
-                                <Nav className="ms-auto">
-                                    <NavLink
-                                        style={{ color: 'white' }}
-                                        href="/profile"
-                                    >
-                                        Profile
-                                    </NavLink>
-                                </Nav>
-                            </>
+                                    <NavItem>
+                                        <NavLink href="/profile" style={{ color: 'white' }}>
+                                            Profile
+                                        </NavLink>
+                                    </NavItem>
+                                    
+                        </>
                         ) : (
                             <>
                                 <NavItem className="float-right">
@@ -118,7 +169,22 @@ function Navv(args) {
                                 </NavItem>
                             </>
                         )}
+
                     </Nav>
+                    /**
+                    Notifications, uses the NotificationCard as a template
+                     */
+                    <NavItem className="ms-auto d-flex align-items-center">
+                                        <Notifications
+                                            data={notifications}
+                                            icon={notifLogo}
+                                            imagePosition='right'
+                                            width='415px'
+                                            marginBottom='15px'
+                                            notificationCard={NotificationCard}
+                                            header={{option:{text:'Mark All As Read', onClick: () => markAllAsRead()}}}
+                                        />
+                                    </NavItem>
                 </Collapse>
             </Navbar>
         </div>
