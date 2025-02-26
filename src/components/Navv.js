@@ -17,8 +17,8 @@ import {
 } from 'reactstrap'
 import Notifications from "react-notifications-menu"
 import NotificationCard from './NotificationCard'
+import notifLogo from '../assets/logo24.png'
 import logo from '../assets/NavLogo.png'
-import cabinet from '../assets/cabinet.jpg'
 
 /**
  * This component is the Navigation bar of our application.
@@ -165,7 +165,7 @@ function Navv(args) {
                     <NavItem className="ms-auto d-flex align-items-center">
                                         <Notifications
                                             data={notifications}
-                                            icon='logo24.png'
+                                            icon={notifLogo}
                                             imagePosition='right'
                                             width='415px'
                                             marginBottom='15px'

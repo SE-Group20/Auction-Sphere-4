@@ -1,5 +1,5 @@
 #import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 import sqlite3
 from sqlite3 import Error
@@ -558,9 +558,8 @@ def read_message(product_id, bidder_id):
 API end point for new notification creation.
 This API is used to create new notifications for users.
 Here, messages, recpients,  are extracted from the json.
-These values are entered into the product table.
+These values are entered into the notification table.
 """
-
 
 @app.route("/notifications", methods=["POST"])
 def create_notification():
@@ -586,6 +585,12 @@ def create_notification():
 
     return response
 
+"""
+API end point for retrieving user notifications.
+This API is used to retrieve notifications for users.
+Here, notifications, message details, links, and time_sent
+are extracted from the database.
+"""
 @app.route("/notifications/<int:user_id>", methods=["GET"])
 def get_user_notifications(user_id):
         if global_id is not None:
@@ -604,13 +609,19 @@ def get_user_notifications(user_id):
             for row in results:
                 notifications.append({
                     "notif_id": row[0],
-                    "image": "logo96.png",
+                    "image": '../src/assets/logo96.png', #Can be set on a case by case basis.
                     "message": row[1],
                     "detailPage": row[2],
                     "receivedTime": row[3]
                 })
             return {"notifications": notifications}
         
+"""
+API end point for set user notifications as read.
+This API is used to retrieve notifications for users.
+Here, notifications, message details, links, and time_sent
+are extracted from the database.
+"""
 @app.route("/notifications/<int:notif_id>/read", methods=["PUT"])
 def read_user_notifications(notif_id):
     try:
