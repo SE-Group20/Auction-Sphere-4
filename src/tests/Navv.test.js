@@ -32,7 +32,7 @@ test('renders navigation links when user is not authenticated', () => {
     // Assert that the Login and Signup links are present
     expect(screen.getByText(/login/i)).toBeInTheDocument()
     expect(screen.getByText(/signup/i)).toBeInTheDocument()
-    expect(screen.queryByText(/products/i)).toBeInTheDocument()
+    expect(screen.getByText(/products/i)).toBeInTheDocument()
     expect(screen.queryByText(/sell/i)).toBeNull() // Sell link should not be present
 })
 
@@ -49,6 +49,8 @@ test('renders navigation links when user is authenticated', () => {
     // Assert that the Sell and Logout links are present
     expect(screen.getByText(/sell/i)).toBeInTheDocument()
     expect(screen.getByText(/logout/i)).toBeInTheDocument()
+    expect(screen.getByText(/messages/i)).toBeInTheDocument()
+    expect(screen.getByText("Notifications")).toBeInTheDocument()
     expect(screen.queryByText(/login/i)).toBeNull()
     expect(screen.queryByText(/signup/i)).toBeNull()
 })
