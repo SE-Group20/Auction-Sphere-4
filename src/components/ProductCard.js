@@ -42,6 +42,7 @@ const ProductCard = ({ product, maxBid, name, profileView = false }) => {
     const handleDelete = async () => {
         try {
             await axios.delete(`${URL}/product/${product[0]}`);
+            window.location.reload()
         } catch (e) {
             toast.error(e)
         }

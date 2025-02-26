@@ -385,6 +385,9 @@ def delete_product(product_id):
     conn = create_connection(database)
     c = conn.cursor()
     c.execute(query)
+    conn.commit()
+
+    return "Product deleted"
 
 """
 API end point to update a product.
