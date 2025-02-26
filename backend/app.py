@@ -588,6 +588,8 @@ def create_notification():
 
 @app.route("/notifications/<int:user_id>", methods=["GET"])
 def get_user_notifications(user_id):
+        if global_id is not None:
+            user_id = global_id
         query = '''SELECT notif_id,message,detail_page,time_sent 
                   FROM notifications 
                   WHERE user_id = ? AND read = FALSE'''
@@ -627,6 +629,8 @@ def read_user_notifications(notif_id):
 @app.route("/notifications/read", methods=["PUT"])
 def read_all_user_notifications(user_id):
     try:
+        if global_id is not None:
+            user_id = global_id
         query = '''UPDATE notifications SET read = TRUE 
                   WHERE read = FALSE and user_id = ?'''
         conn = create_connection(database)
