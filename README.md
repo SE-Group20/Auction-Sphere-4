@@ -20,10 +20,10 @@ Click on the image below to view the demo video of the project
 https://drive.google.com/file/d/1-1IImCdds80cHaB8_4Agh7kr-HKMnpRh/view?usp=sharing
 
 <h2>Demo Video of the improved project</h2>
-[https://www.youtube.com/watch?v=md9xEzERsrU](https://www.youtube.com/watch?v=md9xEzERsrU)
+https://www.youtube.com/watch?v=md9xEzERsrU
 
 <h2> Animated Video on Auction Sphere </h2>
-[https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing](https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing) (created by previous iteration teams)
+https://drive.google.com/file/d/1LEzCGPMM718vFeB9oCEM-H8NxQ2cuWQN/view?usp=sharing (created by previous iteration teams)
 
 ## About Auction-Sphere
 
