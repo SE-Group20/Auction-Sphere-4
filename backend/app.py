@@ -539,7 +539,7 @@ def get_top_products():
 @app.route("/message", methods=["POST"])
 def send_message():
     product_id = request.get_json()['product_id']
-    sender_id = request.get_json()['sender_id']
+    sender_id = global_id
     recipient_id = request.get_json()['recipient_id']
     message = request.get_json()['message']
 
