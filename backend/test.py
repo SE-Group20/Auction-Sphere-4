@@ -59,7 +59,7 @@ def test_create_product(mock_create_call):
     with mock.patch("app.request", m):
         result = app.create_product()
         #print("result=", result)
-    assert result['result'].__eq__("Added product successfully") 
+    assert result['result'].__eq__("Added product successfully")
 
 @patch('app.create_connection')
 def test_update_product(mock_create_call):
@@ -185,3 +185,16 @@ def test_read_all_success(mock_read_call):
     result = app.read_all_user_notifications(0)
     expected_result = "Read all notifications successfully"
     assert result['result'] == expected_result
+
+@patch('app.delete_product')
+def test_delete_product_success(mock_delete_call):
+    mock_delete_call = MagicMock()
+    connection = Mock()
+    mock_delete_call.return_value = connection
+    m = mock.MagicMock()
+    m.values = {"product_id: 1"}
+    with mock.patch("app.request", m):
+        result = app.delete_product(1)
+        print("result=", result)
+    assert result['result'].__eq__('Added notification successfully')
+
