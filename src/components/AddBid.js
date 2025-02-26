@@ -23,14 +23,48 @@ const AddBid = ({ productId, sellerEmail }) => {
                 if (localStorage.getItem('email') === sellerEmail) {
                     toast.error('Cannot bid on your own product!')
                 } else {
-                    response = await axios.post(`${URL}/bid/create`, {
+                    const prevBidderResponse = await axios.get(`${URL}/bid/get`, {
+                        params: {productID: productId}
+                    })
+
+
+                    const response = await axios.post(`${URL}/bid/create`, {
                         bidAmount: amount,
                         prodId: productId,
                         email: localStorage.getItem('email'),
-                    })
-                    window.location.reload(false)
-                    console.log(response)
-                    toast.success(response.data.message)
+                    });
+
+                    if (response.status === 200) {
+                        toast.success(response.data.message)
+                        const owner = await axios.post(`${URL}/getOwner`, {
+                            productID: productId
+                        })
+                        console.log(owner)
+                        const prodName = await axios.get(`${URL}/getName`, {
+                            params: {productID: productId}
+                        })
+                        console.log(owner)
+                        // Send a notification after a successful bid
+                        await axios.post(`${URL}/notifications`, {
+                            user_id: owner.data.result[0][0], 
+                            
+                            message: `A bid of $${amount} has been placed on : ${prodName.data.result}.`,
+                            detail_page: `/details/${productId}` // A link to the product details page
+                        });
+
+                        // Send a notification after a successful bid
+                        if (prevBidder && prevBidder != global_user) {
+                            await axios.post(`${URL}/notifications`, {
+                                user_id: prevBidder.data.result[0][0], 
+                                
+                                message: `A bid of $${amount} has been placed on : ${prodName.data.result}.`,
+                                detail_page: `/details/${productId}` // A link to the product details page
+                            });
+                        }
+                        console.log({URL})
+                        toast.info('Notification sent successfully!');
+                        window.location.reload(false);
+                    }
                 }
             }
         } catch (e) {

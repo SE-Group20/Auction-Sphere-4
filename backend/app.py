@@ -6,6 +6,8 @@ from sqlite3 import Error
 from datetime import datetime, timedelta
 
 from services.chat import ChatService
+from pytest import param
+from notification import NotificationService
 
 app = Flask(__name__)
 CORS(app)
@@ -14,7 +16,6 @@ chatService = ChatService()
 
 global_email = None
 global_id = None
-
 
 def create_connection(db_file):
     conn = None
@@ -34,7 +35,6 @@ def create_table(conn, create_table_sql):
 def convertToBinaryData(filename):
     # Convert digital data to binary format
 
-    print(filename)
     with open(filename, 'rb') as file:
         blobData = file.read()
     return blobData
@@ -74,14 +74,15 @@ def signup():
 
     result = list(c.fetchall())
     response = {}
-    if (result[0][0] == 0):
+    if (result[0][0] == 0): #Email doesn't exist
         query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
                 str(contact) + "';"
         c.execute(query)
         result = list(c.fetchall())
 
-        if (result[0][0] != 0):
+        if (result[0][0] != 0): #If contact number exists
             response["message"] = "An account with this contact already exists"
+            return jsonify(response), 409
         else:
             query = "INSERT INTO users(first_name, last_name, email, contact_number, password) VALUES('" + str(
                 firstName) + "','" + str(lastName) + "','" + str(email) + "','" + str(contact) + "','" + str(
@@ -91,6 +92,7 @@ def signup():
             response["message"] = "Added successfully"
     else:
         response["message"] = "An account with this email already exists"
+        return jsonify(response), 409
     return response
 
 
@@ -124,7 +126,7 @@ def login():
 
         global_email = str(email)
         global_id = result[0][0]
-    else:
+    else: 
         # check if email exists, but password is incorrect
         query = "SELECT COUNT(*) FROM users WHERE email='" + str(email) + "';"
         c.execute(query)
@@ -190,6 +192,7 @@ def profile():
     query_2 = 'SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email = \'' + str(
         global_email) + '\';'
     print("Query 2:", query_2)
+
     c.execute(query_2)
     bid_products_1 = list(c.fetchall())
     highest_Bids = []
@@ -267,6 +270,28 @@ def create_bid():
         response["message"] = "Saved Bid"
     return jsonify(response)
 
+"""
+API end point to get a previous bid.
+This API allows users to retrieve a previous bid by taking in a productID
+They can extract the bid information, using it to get information like current bid and previous 
+"""
+
+@app.route("/bid/get", methods=["GET"])
+def get_bid():
+    # Get relevant data
+    productID = request.args.get('productID')
+    # create db connection
+    conn = create_connection(database)
+    c = conn.cursor()
+    # get initial price wanted by seller
+    select_query = "SELECT * FROM bids WHERE prod_id='" + \
+        str(productID) + "';"
+    c.execute(select_query)
+    result = list(c.fetchall())
+    response = {}
+    response["result"] = result
+    return jsonify(response)
+
 
 """
 API end point for new product creation.
@@ -291,10 +316,10 @@ def create_product():
     currentdatetime = datetime.now()
     formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
     parsed_date = datetime.strptime(formatted_date, '%Y-%m-%d %H:%M:%S')
-    print(type(currentdatetime))
-    print(type(biddingtime))
+    #print(type(currentdatetime))
+    #print(type(biddingtime))
     deadlineDate = parsed_date + timedelta(days=int(biddingtime))
-    print(deadlineDate)
+    #print(deadlineDate)
 
     query = "INSERT INTO product(name, seller_email, photo, initial_price, date, increment, deadline_date, description) VALUES (?,?,?,?,?,?,?,?)"
     c.execute(
@@ -349,6 +374,25 @@ def get_product_image():
     response = {"result": result}
     return response
 
+"""
+API end point to get image from product ID.
+This API is used to get image of the product on the basis of productId extracted from the json.
+This returns photo from the product table.
+
+"""
+
+
+@app.route("/getOwner", methods=["POST"])
+def get_product_owner():
+    productId = request.get_json()['productID']
+    query = "SELECT u.user_id FROM users u JOIN product p on u.email = p.seller_email WHERE p.prod_id=" + str(productId) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+    result = list(c.fetchall())
+    response = {"result": result}
+    return response
+
 
 """
 API end point to details of a product from product ID.
@@ -377,6 +421,17 @@ def get_product_details():
     topbids = list(c.fetchall())
 
     response = {"product": result, "bids": topbids}
+    return response
+
+@app.route("/getName", methods=["GET"])
+def get_product_name():
+    productID = request.args.get('productID')
+    query = "SELECT p.name FROM product p WHERE p.prod_id=" + str(productID) + ";"
+    conn = create_connection(database)
+    c = conn.cursor()
+    c.execute(query)
+    result = list(c.fetchall())
+    response = {"result": result[0][0]}
     return response
 
 
@@ -412,6 +467,7 @@ def update_product_details():
         deadlineDate) + "',increment='" + str(increment) + "',description='" + str(
         description) + "' WHERE prod_id=" + str(productId) + ";"
     print(query)
+
     conn = create_connection(database)
     c = conn.cursor()
     c.execute(query)
@@ -436,7 +492,7 @@ def get_landing_page():
     c = conn.cursor()
     c.execute(query)
     products = list(c.fetchall())
-    print("Products got:", products)
+    #print("Products got:", products)
     highestBids = []
     names = []
     for product in products:
@@ -444,9 +500,9 @@ def get_landing_page():
                 str(product[0]) + ";"
         c.execute(query)
         result = list(c.fetchall())
-        print("Results got:", result)
-        print("\n0", result[0])
-        print("\n0,0", result[0][0])
+        #print("Results got:", result)
+        #print("\n0", result[0])
+        #print("\n0,0", result[0][0])
         if (result[0][0] is not None):
             result = result[0]
             highestBids.append(result[1])
@@ -461,7 +517,7 @@ def get_landing_page():
         "products": products,
         "maximumBids": highestBids,
         "names": names}
-    print(response)
+    #print(response)
     return jsonify(response)
 
 
@@ -497,6 +553,92 @@ def get_messages():
 def read_message(product_id, bidder_id):
     return chatService.read_message(global_id,bidder_id, product_id)
 
+  
+"""
+API end point for new notification creation.
+This API is used to create new notifications for users.
+Here, messages, recpients,  are extracted from the json.
+These values are entered into the product table.
+"""
+
+
+@app.route("/notifications", methods=["POST"])
+def create_notification():
+    user_id = request.get_json()['user_id']
+    message = request.get_json()['message']
+    detail_page = request.get_json()['detail_page']
+    currentdatetime = datetime.now()
+    formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
+    conn = create_connection(database)
+    c = conn.cursor()
+    response = {}
+
+    query = "INSERT INTO notifications(user_id, message, detail_page, time_sent, read) VALUES (?,?,?,?,?)"
+    c.execute(
+        query,
+        (str(user_id),
+         str(message),
+         str(detail_page),
+         str(formatted_date),
+         False))
+    conn.commit()
+    response["result"] = "Added notification successfully"
+
+    return response
+
+@app.route("/notifications/<int:user_id>", methods=["GET"])
+def get_user_notifications(user_id):
+        query = '''SELECT notif_id,message,detail_page,time_sent 
+                  FROM notifications 
+                  WHERE user_id = ? AND read = FALSE'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query, [user_id])
+        results = list(c.fetchall())
+        if len(results) == 0:
+            return {"notifications": "User has no unread notifications."}
+        else:
+            notifications = []
+            for row in results:
+                notifications.append({
+                    "notif_id": row[0],
+                    "image": "logo96.png",
+                    "message": row[1],
+                    "detailPage": row[2],
+                    "receivedTime": row[3]
+                })
+            return {"notifications": notifications}
+        
+@app.route("/notifications/<int:notif_id>/read", methods=["PUT"])
+def read_user_notifications(notif_id):
+    try:
+        query = '''UPDATE notifications SET read = TRUE 
+                  WHERE notif_id = ? AND read = FALSE'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query, (notif_id,))
+        conn.commit()
+        response = {}
+        response["result"] = "Read notification successfully"
+        return response
+    except Exception as e:
+        return {"error": "Failed to update notification"}, 500
+    
+@app.route("/notifications/read", methods=["PUT"])
+def read_all_user_notifications(user_id):
+    try:
+        query = '''UPDATE notifications SET read = TRUE 
+                  WHERE read = FALSE and user_id = ?'''
+        conn = create_connection(database)
+        c = conn.cursor()
+        c.execute(query, (user_id,))
+        conn.commit()
+        response = {}
+        response["result"] = "Read all notifications successfully"
+        return response
+    except Exception as e:
+        return {"error": "Failed to update notifications"}, 500
+
 
 database = r"auction.db"
 create_users_table = """CREATE TABLE IF NOT EXISTS users( 
@@ -526,6 +668,18 @@ create_message_table = """CREATE TABLE IF NOT EXISTS messages(
     FOREIGN KEY (product_id) REFERENCES product (prod_id)
 )"""
 
+
+create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
+    notif_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    message TEST NOT NULL,
+    detail_page TEST NOT NULL,
+    time_sent DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT 0
+    
+    )"""
+
+
 """Create Connection to database"""
 conn = create_connection(database)
 if conn is not None:
@@ -533,8 +687,9 @@ if conn is not None:
     create_table(conn, create_product_table)
     create_table(conn, create_bids_table)
     create_table(conn, create_table_claims)
-    create_table(conn, create_message_table)
 
+    create_table(conn, create_message_table)
+    create_table(conn, create_notification_table)
     cursor = conn.cursor()
     conn.commit()
 
