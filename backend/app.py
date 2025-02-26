@@ -209,10 +209,10 @@ def profile():
             names_bids.append("N/A")
 
     response = {}
-    response['first_name'] = result[0][0]
-    response['last_name'] = result[0][1]
-    response['contact_no'] = result[0][2]
-    response['email'] = result[0][3]
+    response['first_name'] = result[0][1]
+    response['last_name'] = result[0][2]
+    response['contact_no'] = result[0][3]
+    response['email'] = result[0][4]
     response['no_products'] = result_sell[0][0]
     response['no_bids'] = result_bid[0][0]
     response['products'] = products
