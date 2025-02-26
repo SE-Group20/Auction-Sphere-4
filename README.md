@@ -10,7 +10,7 @@
 
 ![GitHub top language](https://img.shields.io/github/languages/top/CSC-510-Group-19/Auction-Sphere-4)
 
-[![DOI](https://zenodo.org/badge/545100230.svg)](https://doi.org/10.5281/zenodo.14027540)
+[![DOI](https://zenodo.org/badge/924952183.svg)](https://doi.org/10.5281/zenodo.14932116)
 
 Repository for CSC 510 Software Engineering Project 2, created by Group : Jonathan Kurian, Eleanor Maye
 
