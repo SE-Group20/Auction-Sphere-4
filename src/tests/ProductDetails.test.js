@@ -134,6 +134,64 @@ describe('ProductDetails Component', () => {
         localStorage.removeItem('auth')
     })
 
+    test('shows Message Seller button when user is authenticated', async () => {
+        axios.post.mockResolvedValueOnce(mockProductData)
+        localStorage.setItem('auth', 'true')
+
+        render(
+            <MemoryRouter initialEntries={['/product/1']}>
+                <Routes>
+                    <Route path="/product/:id" element={<ProductDetails />} />
+                </Routes>
+            </MemoryRouter>
+        )
+
+        await waitFor(() => {
+            const messageSellerButton = screen.getByText(/Message Seller/i)
+            expect(messageSellerButton).toBeInTheDocument()
+        })
+
+        localStorage.removeItem('auth')
+    })
+
+    test('hide Message Seller button when user is not authenticated', async () => {
+        axios.post.mockResolvedValueOnce(mockProductData)
+
+        render(
+            <MemoryRouter initialEntries={['/product/1']}>
+                <Routes>
+                    <Route path="/product/:id" element={<ProductDetails />} />
+                </Routes>
+            </MemoryRouter>
+        )
+
+        await waitFor(() => {
+            const messageSellerButton = screen.getByText(/Message Seller/i)
+            expect(messageSellerButton).tobeNull()
+        })
+
+        localStorage.removeItem('auth')
+    })
+
+    test('hide Add Bid button when user is not authenticated', async () => {
+        axios.post.mockResolvedValueOnce(mockProductData)
+
+        render(
+            <MemoryRouter initialEntries={['/product/1']}>
+                <Routes>
+                    <Route path="/product/:id" element={<ProductDetails />} />
+                </Routes>
+            </MemoryRouter>
+        )
+
+        await waitFor(() => {
+            const addBidButton = screen.getByText(/Add Bid/i)
+            expect(addBidButton).tobeNull()
+        })
+
+        localStorage.removeItem('auth')
+    })
+
     test('toggles AddBid component visibility on button click', async () => {
         axios.post.mockResolvedValueOnce(mockProductData)
         localStorage.setItem('auth', 'true')

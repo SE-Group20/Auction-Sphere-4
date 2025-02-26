@@ -41,8 +41,7 @@ function Navv(args) {
      */
     const fetchNotifications = async () => {
         try {
-            const user_id = 1;
-            const response = await axios.get(`/notifications/${user_id}`);
+            const response = await axios.get(`/notifications/get`);
             setNotifications(response.data.notifications);
             console.log("Notifications", notifications)
         } catch (error) {
@@ -55,7 +54,7 @@ function Navv(args) {
      */
     const markAllAsRead = async () => {
         try {
-          const response = await axios.put(`/notifications/read`);
+          const response = await axios.put(`/notifications/read`) 
           console.log('All notifications marked as read:', response.data);
         } catch (error) {
           console.error('Failed to mark notifications as read:', error);
