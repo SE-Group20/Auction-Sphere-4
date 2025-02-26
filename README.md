@@ -12,7 +12,7 @@
 
 [![DOI](https://zenodo.org/badge/545100230.svg)](https://doi.org/10.5281/zenodo.14027540)
 
-Repository for CSC 510 Software Engineering project 2, created by Group : Lavanya Middha, Nayan Taori, Prathamesh Thakur
+Repository for CSC 510 Software Engineering project 1, created by Group : Jonathan Kurian, Eleanor Maye
 
 Click on the image below to view the demo video of the project
 
@@ -50,7 +50,7 @@ On the products, people can view all the latest items being put up for sale and 
 
 ## Project documentation
 
-The `docs` folder incorporates all necessary documents and documentation in our project.
+The `docs` folder incorporates all necessary documents and documentation for previous iterations. Documentation for the new iteration is available in the [project Wiki](https://github.com/CSC-510-Group-19/Auction-Sphere-4/wiki/Auction-Sphere-4-New-Features)
 
 Forntend Documentation:
 Backend Documentation:
@@ -61,10 +61,16 @@ Code formatter: Prettier, Autopep8, EsLint, pylint
 
 Tech stack: React.js, Flask, SQLite, python, JavaScript
 
-## To run our React application
+## To run our application
 
-Frontend Setup:
-Backend Setup:
+Frontend Setup: run the following comamands inside the project
+npm install yarn
+yarn install
+yarn start
+
+Backend Setup: run the following commands inside the backEnd directory
+pip3 install -r requirements.txt
+python3 app.py
 
 ### Code coverage
 
@@ -79,26 +85,30 @@ https://github.com/kartikson1/Auction-Sphere/blob/main/coverage/lcov-report/inde
 
 ## Link to Discussion Channel:
 
-https://github.com/LavanyaMiddha/Auction-Sphere-2/discussions
+[Disccussion Channel](https://github.com/CSC-510-Group-19/Auction-Sphere-4/discussions)
 
 ## Support
 
 For Any quesries, please use our discussions channel:
-https://github.com/LavanyaMiddha/Auction-Sphere-2/discussions
+[Disccussion Channel](https://github.com/CSC-510-Group-19/Auction-Sphere-4/discussions)
 
 or, reach out to any of the group members mentioned below
 
-## Group-3
+## Group-19
 
-[Lavanya Middha](https://github.com/LavanyaMiddha)
+[Eleanor Maye](https://github.com/ellie-not-found)
 
-[Nayan Taori](https://github.com/NDT2000)
-
-[Prathamesh Thakur](https://github.com/Prathamesh-Thakur)
+[Jonathan Kurian](https://github.com/jgkurian-class)
 
 ## Credits:
 
 This project is an extension of the one created before by:
+Lavanya Middha
+
+Nayan Taori
+
+Prathamesh Thakur
+
 Mithil Dani
 
 Neha Kale
@@ -111,4 +121,4 @@ Vansh Mehta
 
 Pradyumna Khawas
 
-Link to the project: https://github.com/mithildani/Auction-Sphere
+Link to the project: https://github.com/jinish08/Auction-Sphere-3
