@@ -14,7 +14,6 @@ import { URL } from '../global'
 import '../css/card.css'
 import { toast } from 'react-toastify'
 import '../css/bootstrap.min.css'
-import EditProductModal from './EditProductModal'
 
 /**
  * This component displays a single product card on the products page.
