@@ -434,7 +434,9 @@ def get_product_name():
     response = {"result": result[0][0]}
     return response
 
-
+"""
+API endpoitn to delete a product where product_id is the id of the product
+"""
 @app.route("/product/<product_id>", methods=["DELETE"])
 def delete_product(product_id):
     query = "DELETE FROM product WHERE prod_id=" + str(product_id) + ";"
@@ -536,6 +538,10 @@ def get_top_products():
     return jsonify(response)
 
 
+"""
+send_messaage sends a message with the logged in user as the sender, and recipient specified by recipient_id
+product is specified by product_id, and message is stored in message.
+"""
 @app.route("/message", methods=["POST"])
 def send_message():
     product_id = request.get_json()['product_id']
@@ -545,10 +551,17 @@ def send_message():
 
     return chatService.send_message(message, recipient_id, sender_id, product_id)
 
+
+"""
+get_messages returns the last message of each conversation chain the user is participating in.
+"""
 @app.route("/messages", methods=["GET"])
 def get_messages():
     return chatService.get_messages(global_id)
 
+"""
+read message returns all messages for a conversation given its product_id and bidder_id
+"""
 @app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
 def read_message(product_id, bidder_id):
     return chatService.read_message(global_id,bidder_id, product_id)
