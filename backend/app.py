@@ -591,10 +591,9 @@ This API is used to retrieve notifications for users.
 Here, notifications, message details, links, and time_sent
 are extracted from the database.
 """
-@app.route("/notifications/<int:user_id>", methods=["GET"])
-def get_user_notifications(user_id):
-        if global_id is not None:
-            user_id = global_id
+@app.route("/notifications/get", methods=["GET"])
+def get_user_notifications():
+        user_id = global_id
         query = '''SELECT notif_id,message,detail_page,time_sent 
                   FROM notifications 
                   WHERE user_id = ? AND read = FALSE'''
@@ -609,7 +608,7 @@ def get_user_notifications(user_id):
             for row in results:
                 notifications.append({
                     "notif_id": row[0],
-                    "image": '../src/assets/logo96.png', #Can be set on a case by case basis.
+                    "image": '../src/assets/logo96.png', #Can be set on a case by case basis, this is an intentionally failing placeholder
                     "message": row[1],
                     "detailPage": row[2],
                     "receivedTime": row[3]
@@ -618,9 +617,8 @@ def get_user_notifications(user_id):
         
 """
 API end point for set user notifications as read.
-This API is used to retrieve notifications for users.
-Here, notifications, message details, links, and time_sent
-are extracted from the database.
+This API is used to update a single user notification.
+Here, a notification is set to read if not already read.
 """
 @app.route("/notifications/<int:notif_id>/read", methods=["PUT"])
 def read_user_notifications(notif_id):
@@ -636,17 +634,21 @@ def read_user_notifications(notif_id):
         return response
     except Exception as e:
         return {"error": "Failed to update notification"}, 500
-    
+
+"""
+API end point for set user notifications as read.
+This API is used to update all of a user's notifications.
+Here, a notification is set to read if not already read.
+"""
 @app.route("/notifications/read", methods=["PUT"])
-def read_all_user_notifications(user_id):
+def read_all_user_notifications():
+    user_id = global_id
     try:
-        if global_id is not None:
-            user_id = global_id
         query = '''UPDATE notifications SET read = TRUE 
                   WHERE read = FALSE and user_id = ?'''
         conn = create_connection(database)
         c = conn.cursor()
-        c.execute(query, (user_id,))
+        c.execute(query, [user_id])
         conn.commit()
         response = {}
         response["result"] = "Read all notifications successfully"
