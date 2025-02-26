@@ -48,7 +48,7 @@ function Navv(args) {
 
     const markAllAsRead = async () => {
         try {
-          const response = await axios.put(`/notifications/read`);
+          const response = await axios.put(`/notifications/read`) 
           console.log('All notifications marked as read:', response.data);
         } catch (error) {
           console.error('Failed to mark notifications as read:', error);

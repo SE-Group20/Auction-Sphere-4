@@ -62,8 +62,7 @@ const AddBid = ({ productId, sellerEmail }) => {
                                     message: `A bid of $${amount} has been placed on : ${prodName.data.result}.`,
                                     detail_page: `/details/${productId}` // A link to the product details page
                                 });
-                            }
-                            
+                            }  
                         }
                         console.log({URL})
                         toast.info('Notification sent successfully!');
