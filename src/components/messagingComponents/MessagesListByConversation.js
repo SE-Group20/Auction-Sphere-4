@@ -82,7 +82,7 @@ function MessagesListByConversation () {
                                         : 'No messages found'}
                                 </Stack>
 
-                                <div className="form-floating">
+                                <div className="form">
                                     <textarea
                                         className="form-control"
                                         placeholder="Your Message here"
