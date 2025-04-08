@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 from flask_login.utils import LocalProxy
 
-from services.chat import ChatService
-from .user import User, MaybeUser
+from backend.services.chat import ChatService
+from backend.user import User, MaybeUser
 # from notification import NotificationService
 # https://flask-login.readthedocs.io/en/latest/
 import flask_login
@@ -141,7 +141,7 @@ It shows the products the user has put for sale and the products for which the u
 @app.route('/profile', methods=["POST"])
 def profile():
     maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
 
     # must be a user - safe to cast
@@ -539,7 +539,7 @@ def send_message():
     product_id:str = request.get_json()['product_id']
     # sender_id = global_id
     maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast
     current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
@@ -556,7 +556,7 @@ get_messages returns the last message of each conversation chain the user is par
 @app.route("/messages", methods=["GET"])
 def get_messages():
     maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast
     current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
@@ -568,7 +568,7 @@ read message returns all messages for a conversation given its product_id and bi
 @app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
 def read_message(product_id, bidder_id):
     maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast
     current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
@@ -614,8 +614,8 @@ are extracted from the database.
 """
 @app.route("/notifications/get", methods=["GET"])
 def get_user_notifications():
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    maybe_current_user = flask_login.current_user
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast
     current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
@@ -669,7 +669,7 @@ Here, a notification is set to read if not already read.
 @app.route("/notifications/read", methods=["PUT"])
 def read_all_user_notifications():
     maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast
     current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
@@ -731,7 +731,8 @@ create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
 
 
 """Create Connection to database"""
-conn = get_db()
+conn = sqlite3.connect(database_file, check_same_thread=False)
+
 if conn is not None:
     create_table(conn, create_users_table)
     create_table(conn, create_product_table)
@@ -743,6 +744,7 @@ if conn is not None:
     cursor = conn.cursor()
     conn.commit()
 
+    conn.close()
 else:
     print("Error! Cannot create the database connection")
 
