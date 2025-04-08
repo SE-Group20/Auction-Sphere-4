@@ -86,7 +86,7 @@ class User(flask_login.UserMixin):
         :return: User object or None if not found
         """
         cursor = conn.cursor()
-        result = cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number FROM users WHERE user_id = ?", (user_id,))
         user_data:tuple[str,...]|None = result.fetchone()
         if user_data:
             return User(
