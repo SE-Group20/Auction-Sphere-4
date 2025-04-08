@@ -1,38 +1,49 @@
-#import os
-from flask import Flask, request, jsonify, url_for
+import os
+from flask import Flask, request, jsonify, url_for, g
 from flask_cors import CORS
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
 
+from flask_login.utils import LocalProxy
+
 from services.chat import ChatService
-from pytest import param
-from notification import NotificationService
+from .user import User, MaybeUser
+# from notification import NotificationService
+# https://flask-login.readthedocs.io/en/latest/
+import flask_login
+login_manager = flask_login.LoginManager()
 
 app = Flask(__name__)
-CORS(app)
+login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
+# try to load secret key from app_key file
+this_file_dir = os.path.dirname(os.path.abspath(__file__))
+key_file = os.path.join(this_file_dir, "app_key")
+if os.path.exists(key_file):
+    with open("app_key", "r") as f:
+        app.secret_key = f.read()
+else:
+    print("app_key file not found!")
+    quit()
+
+_ = CORS(app)
 
 chatService = ChatService()
 
-global_email = None
-global_id = None
+@login_manager.user_loader
+def load_user(user_id:str|int) -> User|None:
+    return User.user_by_id(get_db(), user_id)
 
-def create_connection(db_file):
-    conn = None
-    conn = sqlite3.connect(db_file)
-    return conn
-
-
-def create_table(conn, create_table_sql):
+def create_table(conn:sqlite3.Connection, create_table_sql:str):
     try:
         c = conn.cursor()
-        c.execute(create_table_sql)
+        _ = c.execute(create_table_sql)
         conn.commit()
     except Error as e:
         print(e)
 
 
-def convertToBinaryData(filename):
+def convertToBinaryData(filename:str):
     # Convert digital data to binary format
 
     with open(filename, 'rb') as file:
@@ -40,7 +51,13 @@ def convertToBinaryData(filename):
     return blobData
 
 
-database = r"auction.db"
+database_file = r"auction.db"
+
+def get_db() -> sqlite3.Connection:
+    db:sqlite3.Connection|None = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(database_file)
+    return db
 
 
 @app.route("/")
@@ -59,41 +76,28 @@ otherwise, a new user is created in the users table with all the details extract
 
 @app.route("/signup", methods=["POST"])
 def signup():
-    firstName = request.get_json()['firstName']
-    lastName = request.get_json()['lastName']
-    email = request.get_json()['email']
-    contact = request.get_json()['contact']
-    password = request.get_json()['password']
+    firstName:str = request.get_json()['firstName']
+    lastName:str = request.get_json()['lastName']
+    email:str = request.get_json()['email']
+    contact:str = request.get_json()['contact']
+    password:str = request.get_json()['password']
 
-    conn = create_connection(database)
-    c = conn.cursor()
+    user_obj = User(None, email, password, firstName, lastName, contact)
 
-    # check if email already exists
-    query = "SELECT COUNT(*) FROM users WHERE email='" + str(email) + "';"
-    c.execute(query)
+    conn = get_db()
 
-    result = list(c.fetchall())
+    success, message = user_obj.try_signup(conn)
+
     response = {}
-    if (result[0][0] == 0): #Email doesn't exist
-        query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
-                str(contact) + "';"
-        c.execute(query)
-        result = list(c.fetchall())
-
-        if (result[0][0] != 0): #If contact number exists
-            response["message"] = "An account with this contact already exists"
-            return jsonify(response), 409
-        else:
-            query = "INSERT INTO users(first_name, last_name, email, contact_number, password) VALUES('" + str(
-                firstName) + "','" + str(lastName) + "','" + str(email) + "','" + str(contact) + "','" + str(
-                password) + "');"
-            c.execute(query)
-            conn.commit()
-            response["message"] = "Added successfully"
+    if success:
+        response["message"] = "Account created successfully"
     else:
-        response["message"] = "An account with this email already exists"
+        response["message"] = message
+
+    if success:
+        return jsonify(response)
+    else:
         return jsonify(response), 409
-    return response
 
 
 """
@@ -106,35 +110,22 @@ If the email and password are correct, login is successful else user is asked to
 
 @app.route("/login", methods=["POST"])
 def login():
-    global global_email
-    global global_id
-    email = request.get_json()['email']
-    password = request.get_json()['password']
+    email:str = request.get_json()['email']
+    password:str = request.get_json()['password']
 
-    conn = create_connection(database)
-    c = conn.cursor()
+    conn = get_db()
 
-    # check if email and password pair exists
-    query = "SELECT * FROM users WHERE email='" + \
-            str(email) + "' AND password='" + str(password) + "';"
-    c.execute(query)
-    result = list(c.fetchall())
+    result:User|None = User.try_login(conn, email, password)
     response = {}
 
-    if (len(result) == 1):
-        response["message"] = "Logged in successfully"
+    if result:
+        # we found a user in the db
+        login_result = flask_login.login_user(result) # pyright:ignore[reportUnknownMemberType]
+        if login_result:
+            response["message"] = "Logged in successfully"
+            return jsonify(response)
 
-        global_email = str(email)
-        global_id = result[0][0]
-    else: 
-        # check if email exists, but password is incorrect
-        query = "SELECT COUNT(*) FROM users WHERE email='" + str(email) + "';"
-        c.execute(query)
-        result = list(c.fetchall())
-        if (result[0][0] == 1):
-            response["message"] = "Invalid credentials!"
-        else:
-            response["message"] = "Please create an account!"
+    response["message"] = "Invalid credentials"
     return jsonify(response)
 
 
@@ -149,76 +140,77 @@ It shows the products the user has put for sale and the products for which the u
 
 @app.route('/profile', methods=["POST"])
 def profile():
-    global global_email
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
 
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     # create db connection
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
 
-    query = 'SELECT * FROM users WHERE email=\'' + str(global_email) + "\';"
-    c.execute(query)
-    result = list(c.fetchall())
+    # number of bids made by this user
+    result = c.execute('SELECT COUNT(*) FROM bids WHERE email=?;', (current_user.email,))
+    result_bid_count = list(result.fetchall())
 
-    query_sell = 'SELECT COUNT(*) FROM product WHERE seller_email=\'' + str(global_email) + '\';'
-    c.execute(query_sell)
-    result_sell = list(c.fetchall())
+    # up to 10 products listed by this user
+    result = c.execute('SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE seller_email=? ORDER BY date DESC LIMIT 10;', (current_user.email,))
+    products:list[tuple[str,...]] = list(result.fetchall())
+    highestBids:list[int] = []
+    names:list[str] = []
 
-    query_bid = 'SELECT COUNT(*) FROM bids WHERE email=\'' + str(global_email) + '\';'
-    c.execute(query_bid)
-    result_bid = list(c.fetchall())
-
-    query_sell = 'SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE seller_email=\'' + str(
-        global_email) + '\'ORDER BY date DESC LIMIT 10;'
-    conn = create_connection(database)
-    c = conn.cursor()
-    c.execute(query_sell)
-    products = list(c.fetchall())
-    highestBids = []
-    names = []
+    # get the highest bid for each product
+    # TODO: potentially slow - could be combined into a single query
     for product in products:
-        query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) + ";"
-        c.execute(query)
-        result_bids = list(c.fetchall())
+        result = c.execute("SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=?;", (product[0],))
+        result_bids:list[tuple[str|None, str]] = list(result.fetchall())
+
+        # TODO: can this ever be none?
         if (result_bids[0][0] is not None):
-            result_bids = result_bids[0]
-            highestBids.append(result_bids[1])
-            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bids[0]) + "';"
-            c.execute(query)
-            names.append(list(c.fetchall())[0])
+            result_bids_row = result_bids[0]
+            highestBids.append(int(result_bids_row[1]))
+
+            result = c.execute("SELECT first_name, last_name FROM users WHERE email=?;", (result_bids_row[0],))
+            bidder_name:list[tuple[str, str]] = list(result.fetchall())
+            name_combined = bidder_name[0][0] + " " + bidder_name[0][1]
+            names.append(name_combined)
+
         else:
             highestBids.append(-1)
             names.append("N/A")
 
-    query_2 = 'SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email = \'' + str(
-        global_email) + '\';'
-    print("Query 2:", query_2)
+    # get the products that this user has bid on
+    result = c.execute('SELECT P.prod_id, P.name, P.seller_email, P.initial_price, P.date, P.increment, P.deadline_date, P.description FROM product P join bids B on P.prod_id = B.prod_id WHERE B.email=?;', (current_user.email,))
+    bid_products_1:list[tuple[str,...]] = list(result.fetchall())
 
-    c.execute(query_2)
-    bid_products_1 = list(c.fetchall())
-    highest_Bids = []
-    names_bids = []
+    highest_Bids:list[int] = []
+    names_bids:list[str] = []
 
     for product in bid_products_1:
-        query_products = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + str(product[0]) + ";"
-        c.execute(query_products)
-        result_bid_products = list(c.fetchall())
+        # get the highest bid for each product
+        result = c.execute("SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=?;", (product[0],))
+        result_bid_products:list[tuple[str|None, str]] = list(result.fetchall())
+
         if (result_bid_products[0][0] is not None):
-            result_bid_products = result_bid_products[0]
-            highest_Bids.append(result_bid_products[1])
-            query = "SELECT first_name, last_name FROM users WHERE email='" + str(result_bid_products[0]) + "';"
-            c.execute(query)
-            names_bids.append(list(c.fetchall())[0])
+            result_bid_product = result_bid_products[0]
+            highest_Bids.append(int(result_bid_product[1]))
+
+            result = c.execute("SELECT first_name, last_name FROM users WHERE email=?;", (result_bid_product[0],))
+            bidder_name:list[tuple[str, str]] = list(result.fetchall())
+            name_combined = bidder_name[0][0] + " " + bidder_name[0][1]
+            names_bids.append(name_combined)
         else:
             highest_Bids.append(-1)
             names_bids.append("N/A")
 
     response = {}
-    response['first_name'] = result[0][1]
-    response['last_name'] = result[0][2]
-    response['contact_no'] = result[0][3]
-    response['email'] = result[0][4]
-    response['no_products'] = result_sell[0][0]
-    response['no_bids'] = result_bid[0][0]
+    response['first_name'] = current_user.first_name
+    response['last_name'] = current_user.last_name
+    response['contact_no'] = current_user.contact_number
+    response['email'] = current_user.email
+    response['no_products'] = len(products)
+    response['no_bids'] = result_bid_count[0][0]
     response['products'] = products
     response['maximum_bids'] = highestBids
     response['names'] = names
@@ -241,19 +233,18 @@ Otherwise it is created/updated.
 @app.route("/bid/create", methods=["POST"])
 def create_bid():
     # Get relevant data
-    productId = request.get_json()['prodId']
-    email = request.get_json()['email']
-    amount = request.get_json()['bidAmount']
+    productId:str = request.get_json()['prodId']
+    email:str = request.get_json()['email']
+    amount:str = request.get_json()['bidAmount']
 
     # create db connection
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
 
     # get initial price wanted by seller
-    select_query = "SELECT initial_price FROM product WHERE prod_id='" + \
-                   str(productId) + "';"
-    c.execute(select_query)
-    result = list(c.fetchall())
+    result = c.execute(
+        "SELECT initial_price FROM product WHERE prod_id=?;", (productId,))
+    result = list(result.fetchall())
     response = {}
 
     #  if bid amount is less than price by seller then don't save in db
@@ -261,10 +252,9 @@ def create_bid():
         response["message"] = "Amount less than initial price"
     else:
         currentTime = int(datetime.utcnow().timestamp())
-        # print(currentTime)
-        insert_query = "INSERT OR REPLACE INTO bids(prod_id,email,bid_amount,created_at) VALUES ('" + str(
-            productId) + "','" + str(email) + "','" + str(amount) + "','" + str(currentTime) + "');"
-        c.execute(insert_query)
+        result = c.execute(
+            "INSERT OR REPLACE INTO bids(prod_id,email,bid_amount,created_at) VALUES (?,?,?,?);",
+            (productId, email, amount, currentTime))
         conn.commit()
 
         response["message"] = "Saved Bid"
@@ -281,13 +271,12 @@ def get_bid():
     # Get relevant data
     productID = request.args.get('productID')
     # create db connection
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
     # get initial price wanted by seller
-    select_query = "SELECT * FROM bids WHERE prod_id='" + \
-        str(productID) + "';"
-    c.execute(select_query)
-    result = list(c.fetchall())
+    result = c.execute(
+        "SELECT * FROM bids WHERE prod_id=?;", (productID,))
+    result = list(result.fetchall())
     response = {}
     response["result"] = result
     return jsonify(response)
@@ -303,16 +292,19 @@ These values are entered into the product table.
 
 @app.route("/product/create", methods=["POST"])
 def create_product():
-    productName = request.get_json()['productName']
-    sellerEmail = request.get_json()['sellerEmail']
-    initialPrice = request.get_json()['initialPrice']
-    increment = request.get_json()['increment']
-    photo = request.get_json()['photo']
-    description = request.get_json()['description']
-    biddingtime = request.get_json()['biddingTime']
-    conn = create_connection(database)
+    productName:str = request.get_json()['productName']
+    sellerEmail:str = request.get_json()['sellerEmail']
+    # TODO(kurt): don't trust the client's input!
+    sellerId:str = request.get_json()['sellerId']
+    initialPrice:str = request.get_json()['initialPrice']
+    increment:str = request.get_json()['increment']
+    photo:str = request.get_json()['photo']
+    description:str = request.get_json()['description']
+    biddingtime:str = request.get_json()['biddingTime']
+
+    conn = get_db()
     c = conn.cursor()
-    response = {}
+    response:dict[str,str] = {}
     currentdatetime = datetime.now()
     formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
     parsed_date = datetime.strptime(formatted_date, '%Y-%m-%d %H:%M:%S')
@@ -321,11 +313,12 @@ def create_product():
     deadlineDate = parsed_date + timedelta(days=int(biddingtime))
     #print(deadlineDate)
 
-    query = "INSERT INTO product(name, seller_email, photo, initial_price, date, increment, deadline_date, description) VALUES (?,?,?,?,?,?,?,?)"
-    c.execute(
+    query = "INSERT INTO product(name, seller_email, seller_id, photo, initial_price, date, increment, deadline_date, description) VALUES (?,?,?,?,?,?,?,?,?)"
+    _ = c.execute(
         query,
         (str(productName),
          str(sellerEmail),
+         str(sellerId),
          str(photo),
          initialPrice,
          deadlineDate,
@@ -347,12 +340,13 @@ This API lists down all the product details present in product table sorted in t
 @app.route("/product/listAll", methods=["GET"])
 def get_all_products():
     query = "SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product ORDER BY date DESC"
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    result = list(c.fetchall())
-    response = {"result": result}
+    result = c.execute(query)
+    all_prods = list(result.fetchall())
+    response = {"result": all_prods}
     return (response)
+
 
 
 """
@@ -365,12 +359,12 @@ This returns photo from the product table.
 
 @app.route("/product/getImage", methods=["POST"])
 def get_product_image():
-    productId = request.get_json()['productID']
-    query = "SELECT photo FROM product WHERE prod_id=" + str(productId) + ";"
-    conn = create_connection(database)
+    productId:str = request.get_json()['productID']
+    query = "SELECT photo FROM product WHERE prod_id=?;"
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    result = list(c.fetchall())
+    result = c.execute(query, (productId,))
+    result = list(result.fetchall())
     response = {"result": result}
     return response
 
@@ -384,12 +378,12 @@ This returns photo from the product table.
 
 @app.route("/getOwner", methods=["POST"])
 def get_product_owner():
-    productId = request.get_json()['productID']
-    query = "SELECT u.user_id FROM users u JOIN product p on u.email = p.seller_email WHERE p.prod_id=" + str(productId) + ";"
-    conn = create_connection(database)
+    productId:str = request.get_json()['productID']
+    query = "SELECT seller_email FROM product WHERE prod_id=?;"
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    result = list(c.fetchall())
+    result = c.execute(query, (productId,))
+    result = list(result.fetchall())
     response = {"result": result}
     return response
 
@@ -404,46 +398,51 @@ It also lists down top ten bids of a particular product.
 
 @app.route("/product/getDetails", methods=["POST"])
 def get_product_details():
-    productID = request.get_json()['productID']
+    productID:str = request.get_json()['productID']
 
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
 
     # gets product details
-    query = "SELECT * FROM product WHERE prod_id=" + str(productID) + ";"
-    c.execute(query)
-    result = list(c.fetchall())
+    query = "SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE prod_id=?;"
+    result = c.execute(query, (productID,))
+    prod_details = list(result.fetchall())
+
 
     # get highest 10 bids
-    query = "SELECT users.first_name, users.last_name, bids.bid_amount FROM users INNER JOIN bids ON bids.email = users.email WHERE bids.prod_id=" + \
-            str(productID) + " ORDER BY bid_amount DESC LIMIT 10;"
-    c.execute(query)
+    query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=? GROUP BY email ORDER BY MAX(bid_amount) DESC LIMIT 10;"
+    result = c.execute(query, (productID,))
+
     topbids = list(c.fetchall())
 
-    response = {"product": result, "bids": topbids}
+    response = {"product": prod_details, "bids": topbids}
     return response
 
 @app.route("/getName", methods=["GET"])
 def get_product_name():
     productID = request.args.get('productID')
-    query = "SELECT p.name FROM product p WHERE p.prod_id=" + str(productID) + ";"
-    conn = create_connection(database)
+    # query = "SELECT p.name FROM product p WHERE p.prod_id=" + str(productID) + ";"
+    query = "SELECT name FROM product WHERE prod_id=?;"
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    result = list(c.fetchall())
-    response = {"result": result[0][0]}
+    result = c.execute(query, (productID,))
+    name = list(result.fetchall())
+    response = {"result": name[0][0]}
     return response
 
 """
 API endpoitn to delete a product where product_id is the id of the product
 """
 @app.route("/product/<product_id>", methods=["DELETE"])
-def delete_product(product_id):
-    query = "DELETE FROM product WHERE prod_id=" + str(product_id) + ";"
-    conn = create_connection(database)
+def delete_product(product_id:str):
+    query = "DELETE FROM product WHERE prod_id=?;"
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
+    result = c.execute(query, (product_id,))
     conn.commit()
+
+    print("Deleted product with id:", product_id)
+    print("result:", result)
 
     return "Product deleted"
 
@@ -457,24 +456,23 @@ These new values are updated in the product table on the basis of productId.
 
 @app.route("/product/update", methods=["POST"])
 def update_product_details():
-    productId = request.get_json()['productID']
-    productName = request.get_json()['productName']
-    initialPrice = request.get_json()['initialPrice']
-    deadlineDate = request.get_json()['deadlineDate']
-    description = request.get_json()['description']
-    increment = request.get_json()['increment']
+    productId:str = request.get_json()['productID']
+    productName:str = request.get_json()['productName']
+    initialPrice:str = request.get_json()['initialPrice']
+    deadlineDate:str = request.get_json()['deadlineDate']
+    description:str = request.get_json()['description']
+    increment:str = request.get_json()['increment']
 
-    query = "UPDATE product SET name='" + str(productName) + "',initial_price='" + str(
-        initialPrice) + "',deadline_date='" + str(
-        deadlineDate) + "',increment='" + str(increment) + "',description='" + str(
-        description) + "' WHERE prod_id=" + str(productId) + ";"
-    print(query)
-
-    conn = create_connection(database)
+    query = "UPDATE product SET name=?, initial_price=?, deadline_date=?, increment=?, description=? WHERE prod_id=?;"
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
+    result = c.execute(query, (productName, initialPrice, deadlineDate, increment, description, productId))
     conn.commit()
+    print("Updated product with id:", productId)
+    print("result:", result)
+
     response = {"message": "Updated product successfully"}
+
     return response
 
 
@@ -490,28 +488,22 @@ If there is no such bid on the product, -1 is appended to the list.
 def get_landing_page():
     response = {}
     query = "SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product ORDER BY date DESC LIMIT 10;"
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    products = list(c.fetchall())
+    latest_prod_result = c.execute(query)
+    products:list[tuple[str,...]] = list(latest_prod_result.fetchall())
     #print("Products got:", products)
-    highestBids = []
-    names = []
+    highestBids:list[int] = []
+    names:list[str] = []
     for product in products:
-        query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=" + \
-                str(product[0]) + ";"
-        c.execute(query)
-        result = list(c.fetchall())
-        #print("Results got:", result)
-        #print("\n0", result[0])
-        #print("\n0,0", result[0][0])
-        if (result[0][0] is not None):
-            result = result[0]
-            highestBids.append(result[1])
-            query = "SELECT first_name, last_name FROM users WHERE email='" + \
-                    str(result[0]) + "';"
-            c.execute(query)
-            names.append(list(c.fetchall())[0])
+        prod_result = c.execute("SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=?;", (product[0],))
+        prod_result_list:list[tuple[str|None, int]] = list(prod_result.fetchall())
+        if (prod_result_list[0][0] is not None):
+            this_prod = prod_result_list[0]
+            highestBids.append(this_prod[1])
+            bidders_result = c.execute("SELECT first_name, last_name FROM users WHERE email=?;", (this_prod[0],))
+            bidders_result_list:list[tuple[str, str]] = list(bidders_result.fetchall())
+            names.append(bidders_result_list[0][0] + " " + bidders_result_list[0][1])
         else:
             highestBids.append(-1)
             names.append("N/A")
@@ -527,11 +519,11 @@ def get_landing_page():
 def get_top_products():
     response = {}
     query = "SELECT name, photo, description FROM product ORDER BY date DESC LIMIT 10;"
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
-    c.execute(query)
-    products = list(c.fetchall())
-    if products.__len__ == 0:
+    result = c.execute(query)
+    products = list(result.fetchall())
+    if len(products) == 0:
         print("No data found")
     response = {
         "products": products}
@@ -544,10 +536,16 @@ product is specified by product_id, and message is stored in message.
 """
 @app.route("/message", methods=["POST"])
 def send_message():
-    product_id = request.get_json()['product_id']
-    sender_id = global_id
-    recipient_id = request.get_json()['recipient_id']
-    message = request.get_json()['message']
+    product_id:str = request.get_json()['product_id']
+    # sender_id = global_id
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    sender_id = current_user.id
+    recipient_id:str = request.get_json()['recipient_id']
+    message:str = request.get_json()['message']
 
     return chatService.send_message(message, recipient_id, sender_id, product_id)
 
@@ -557,14 +555,24 @@ get_messages returns the last message of each conversation chain the user is par
 """
 @app.route("/messages", methods=["GET"])
 def get_messages():
-    return chatService.get_messages(global_id)
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    return chatService.get_messages(current_user.id)
 
 """
 read message returns all messages for a conversation given its product_id and bidder_id
 """
 @app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
 def read_message(product_id, bidder_id):
-    return chatService.read_message(global_id,bidder_id, product_id)
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    return chatService.read_message(current_user.id,bidder_id, product_id)
 
   
 """
@@ -576,17 +584,17 @@ These values are entered into the notification table.
 
 @app.route("/notifications", methods=["POST"])
 def create_notification():
-    user_id = request.get_json()['user_id']
-    message = request.get_json()['message']
-    detail_page = request.get_json()['detail_page']
+    user_id:str = request.get_json()['user_id']
+    message:str = request.get_json()['message']
+    detail_page:str = request.get_json()['detail_page']
     currentdatetime = datetime.now()
     formatted_date = currentdatetime.strftime('%Y-%m-%d %H:%M:%S')
-    conn = create_connection(database)
+    conn = get_db()
     c = conn.cursor()
-    response = {}
+    response:dict[str, str] = {}
 
     query = "INSERT INTO notifications(user_id, message, detail_page, time_sent, read) VALUES (?,?,?,?,?)"
-    c.execute(
+    _ = c.execute(
         query,
         (str(user_id),
          str(message),
@@ -606,27 +614,32 @@ are extracted from the database.
 """
 @app.route("/notifications/get", methods=["GET"])
 def get_user_notifications():
-        user_id = global_id
-        query = '''SELECT notif_id,message,detail_page,time_sent 
-                  FROM notifications 
-                  WHERE user_id = ? AND read = FALSE'''
-        conn = create_connection(database)
-        c = conn.cursor()
-        c.execute(query, [user_id])
-        results = list(c.fetchall())
-        if len(results) == 0:
-            return {"notifications": "User has no unread notifications."}
-        else:
-            notifications = []
-            for row in results:
-                notifications.append({
-                    "notif_id": row[0],
-                    "image": '../src/assets/logo96.png', #Can be set on a case by case basis, this is an intentionally failing placeholder
-                    "message": row[1],
-                    "detailPage": row[2],
-                    "receivedTime": row[3]
-                })
-            return {"notifications": notifications}
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    user_id = current_user.id
+    query = '''SELECT notif_id,message,detail_page,time_sent 
+                FROM notifications 
+                WHERE user_id = ? AND read = FALSE'''
+    conn = get_db()
+    c = conn.cursor()
+    notif_results = c.execute(query, [user_id])
+    results = list(notif_results.fetchall())
+    if len(results) == 0:
+        return {"notifications": []}
+    else:
+        notifications = []
+        for row in results:
+            notifications.append({
+                "notif_id": row[0],
+                "image": '../src/assets/logo96.png', #Can be set on a case by case basis, this is an intentionally failing placeholder
+                "message": row[1],
+                "detailPage": row[2],
+                "receivedTime": row[3]
+            })
+        return {"notifications": notifications}
         
 """
 API end point for set user notifications as read.
@@ -638,9 +651,9 @@ def read_user_notifications(notif_id):
     try:
         query = '''UPDATE notifications SET read = TRUE 
                   WHERE notif_id = ? AND read = FALSE'''
-        conn = create_connection(database)
+        conn = get_db()
         c = conn.cursor()
-        c.execute(query, (notif_id,))
+        _ = c.execute(query, (notif_id,))
         conn.commit()
         response = {}
         response["result"] = "Read notification successfully"
@@ -655,13 +668,18 @@ Here, a notification is set to read if not already read.
 """
 @app.route("/notifications/read", methods=["PUT"])
 def read_all_user_notifications():
-    user_id = global_id
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user is flask_login.AnonymousUserMixin:
+        return jsonify({"message": "User not logged in"}), 401
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    user_id = current_user.id
     try:
         query = '''UPDATE notifications SET read = TRUE 
                   WHERE read = FALSE and user_id = ?'''
-        conn = create_connection(database)
+        conn = get_db()
         c = conn.cursor()
-        c.execute(query, [user_id])
+        _ = c.execute(query, [user_id])
         conn.commit()
         response = {}
         response["result"] = "Read all notifications successfully"
@@ -679,6 +697,8 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
     email TEXT UNIQUE, 
     password TEXT NOT NULL);"""
 
+# TODO(kurt): normalize database - don't keep seller_id and seller_email as separate fields
+# use a foreign key to reference the user table instead
 create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_id INTEGER NOT NULL, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email), FOREIGN KEY(seller_id) references users(user_id));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
@@ -711,7 +731,7 @@ create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
 
 
 """Create Connection to database"""
-conn = create_connection(database)
+conn = get_db()
 if conn is not None:
     create_table(conn, create_users_table)
     create_table(conn, create_product_table)

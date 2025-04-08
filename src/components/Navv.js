@@ -15,7 +15,8 @@ import {
     DropdownItem,
     NavbarText,
 } from 'reactstrap'
-import Notifications from "react-notifications-menu"
+// import Notifications from "react-notifications-menu"
+import Notifications from './Notification/Notifications'
 import NotificationCard from './NotificationCard'
 import notifLogo from '../assets/logo24.png'
 import logo from '../assets/NavLogo.png'
@@ -42,7 +43,8 @@ function Navv(args) {
     const fetchNotifications = async () => {
         try {
             const response = await axios.get(`/notifications/get`);
-            setNotifications(response.data.notifications);
+            // setNotifications(response.data.notifications);
+            // convert from string to json before setting state
             console.log("Notifications", notifications)
         } catch (error) {
             console.error("Error fetching notifications:", error);

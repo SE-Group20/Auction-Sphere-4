@@ -38,6 +38,8 @@ const Sell = () => {
             formData.sellerEmail = localStorage.getItem('email')
 
         formData.photo = encodedImages
+        // TODO(kurt): remove temporary hack that allows this to work
+        formData.sellerId = 1
         console.log(formData)
         let response
         try {

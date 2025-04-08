@@ -1,5 +1,6 @@
 import sqlite3
 
+# TODO: this is never used!
 class NotificationService:
     try:
         conn = sqlite3.connect('auction.db', check_same_thread=False)
@@ -18,6 +19,6 @@ class NotificationService:
         results = list(self.cursor.fetchall())
         print(results)
         if len(results) == 0:
-            return {"notifications": "User has no unread notifications."}
+            return {"notifications": "[]"}
         else:
             return {"notifications": results}
