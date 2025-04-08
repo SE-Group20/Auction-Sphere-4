@@ -19,6 +19,9 @@ from services.chat import ChatService
 from pytest import param
 from notification import NotificationService
 from notification import send_email_notification
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 app = Flask(__name__)
@@ -97,6 +100,10 @@ def signup():
     contact = request.get_json()['contact']
     password = request.get_json()['password']
     email_opt_in = int(request.get_json().get('emailOptIn', False))
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
 >>>>>>> Stashed changes
 

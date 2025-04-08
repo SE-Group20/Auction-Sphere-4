@@ -1,6 +1,35 @@
 import sqlite3
 import smtplib
 from email.mime.text import MIMEText
+<<<<<<< Updated upstream
+=======
+
+def send_email_notification(new_bid_info):
+    try:
+        conn = sqlite3.connect('auction.db', check_same_thread=False)
+        c = conn.cursor()
+    except sqlite3.Error as e:
+        print(e)
+    
+    c.execute("SELECT email FROM users WHERE email_opt_in = 1;")
+    recipients = [row[0] for row in c.fetchall()]
+
+    if not recipients:
+        return
+
+    subject = "🚨 New Bid Alert!"
+    body = f"A new bid was placed: {new_bid_info}"
+
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = "youremail@example.com"
+    msg['To'] = ", ".join(recipients)
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login("youremail@example.com", "yourpassword")
+        server.sendmail(msg['From'], recipients, msg.as_string())
+>>>>>>> Stashed changes
 
 def send_email_notification(new_bid_info):
     try:
