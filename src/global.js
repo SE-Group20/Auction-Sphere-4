@@ -1,3 +1,3 @@
-// NO NO NO - wtf?
-const URL = 'http://127.0.0.1:5000'
+// configurable base url. blank is best for cookie compatability
+const URL = ''
 export { URL }
