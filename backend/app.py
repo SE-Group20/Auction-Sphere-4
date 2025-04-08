@@ -5,6 +5,7 @@ import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
 
+<<<<<<< Updated upstream
 from flask_login.utils import LocalProxy
 
 from backend.services.chat import ChatService
@@ -13,6 +14,12 @@ from backend.user import User, MaybeUser
 # https://flask-login.readthedocs.io/en/latest/
 import flask_login
 login_manager = flask_login.LoginManager()
+=======
+from services.chat import ChatService
+from pytest import param
+from notification import NotificationService
+from notification import send_email_notification
+>>>>>>> Stashed changes
 
 app = Flask(__name__)
 _ = CORS(app)
@@ -77,11 +84,21 @@ otherwise, a new user is created in the users table with all the details extract
 
 @app.route("/signup", methods=["POST"])
 def signup():
+<<<<<<< Updated upstream
     firstName:str = request.get_json()['firstName']
     lastName:str = request.get_json()['lastName']
     email:str = request.get_json()['email']
     contact:str = request.get_json()['contact']
     password:str = request.get_json()['password']
+=======
+    firstName = request.get_json()['firstName']
+    lastName = request.get_json()['lastName']
+    email = request.get_json()['email']
+    contact = request.get_json()['contact']
+    password = request.get_json()['password']
+    email_opt_in = int(request.get_json().get('emailOptIn', False))
+
+>>>>>>> Stashed changes
 
     user_obj = User(None, email, password, firstName, lastName, contact)
 
@@ -90,6 +107,7 @@ def signup():
     success, message = user_obj.try_signup(conn)
 
     response = {}
+<<<<<<< Updated upstream
     if success:
         response["message"] = "Account created successfully"
     else:
@@ -97,6 +115,26 @@ def signup():
 
     if success:
         return jsonify(response)
+=======
+    if (result[0][0] == 0): #Email doesn't exist
+        query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
+                str(contact) + "';"
+        c.execute(query)
+        result = list(c.fetchall())
+
+        if (result[0][0] != 0): #If contact number exists
+            response["message"] = "An account with this contact already exists"
+            return jsonify(response), 409
+        else:
+            query = """
+                INSERT INTO users(first_name, last_name, email, contact_number, password, email_opt_in)
+                VALUES (?, ?, ?, ?, ?, ?);
+                """
+            c.execute(query, (firstName, lastName, email, contact, password, int(email_opt_in)))
+
+            conn.commit()
+            response["message"] = "Added successfully"
+>>>>>>> Stashed changes
     else:
         return jsonify(response), 409
 
@@ -258,9 +296,10 @@ def create_bid():
             "INSERT OR REPLACE INTO bids(prod_id,email,bid_amount,created_at) VALUES (?,?,?,?);",
             (productId, email, amount, currentTime))
         conn.commit()
-
+        # ⬇️ Trigger email notification to opted-in users
+        send_email_notification(f"New bid of ${amount} placed on Product ID: {productId}")
         response["message"] = "Saved Bid"
-    return jsonify(response)
+    return jsonify(response)    
 
 """
 API end point to get a previous bid.
