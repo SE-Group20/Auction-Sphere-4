@@ -31,7 +31,12 @@ const Login = () => {
         console.log(formData)
         let response
         try {
-            response = await axios.post(`${URL}/login`, formData)
+            response = await axios.post(`/login`, formData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            })
             console.log(response)
             // Set local storage
             if (response.data.message === 'Logged in successfully') {

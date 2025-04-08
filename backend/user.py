@@ -16,7 +16,7 @@ class User(flask_login.UserMixin):
         :param last_name: User's last name
         :param contact_number: User's contact number
         """
-        self.id:int|None = None
+        self.id:int|None = id
         self.email:str = email
         self.password:str = password
         self.first_name:str = first_name
@@ -62,7 +62,7 @@ class User(flask_login.UserMixin):
         :return: User object or None if not found
         """
         cursor = conn.cursor()
-        result = cursor.execute("SELECT id, email, password, first_name, last_name, contact_number FROM users WHERE email = ?", (email,))
+        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number FROM users WHERE email = ?", (email,))
         user_data:tuple[str,...]|None = result.fetchone()
         if user_data:
             if len(user_data) != 6:
@@ -86,7 +86,7 @@ class User(flask_login.UserMixin):
         :return: User object or None if not found
         """
         cursor = conn.cursor()
-        result = cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        result = cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         user_data:tuple[str,...]|None = result.fetchone()
         if user_data:
             return User(

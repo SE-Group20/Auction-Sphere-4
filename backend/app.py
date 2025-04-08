@@ -15,6 +15,7 @@ import flask_login
 login_manager = flask_login.LoginManager()
 
 app = Flask(__name__)
+_ = CORS(app)
 login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
 # try to load secret key from app_key file
 this_file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,13 +27,13 @@ else:
     print("app_key file not found!")
     quit()
 
-_ = CORS(app)
 
 chatService = ChatService()
 
 @login_manager.user_loader
 def load_user(user_id:str|int) -> User|None:
-    return User.user_by_id(get_db(), user_id)
+    user =  User.user_by_id(get_db(), user_id)
+    return user
 
 def create_table(conn:sqlite3.Connection, create_table_sql:str):
     try:
@@ -117,6 +118,7 @@ def login():
 
     result:User|None = User.try_login(conn, email, password)
     response = {}
+    print("Result:", result)
 
     if result:
         # we found a user in the db
@@ -126,7 +128,7 @@ def login():
             return jsonify(response)
 
     response["message"] = "Invalid credentials"
-    return jsonify(response)
+    return jsonify(response), 401
 
 
 """ 
@@ -615,6 +617,7 @@ are extracted from the database.
 @app.route("/notifications/get", methods=["GET"])
 def get_user_notifications():
     maybe_current_user = flask_login.current_user
+    print("maybe_current_user:", maybe_current_user)
     if not maybe_current_user or maybe_current_user.is_authenticated == False:
         return jsonify({"message": "User not logged in"}), 401
     # must be a user - safe to cast

@@ -15,8 +15,8 @@ import {
     DropdownItem,
     NavbarText,
 } from 'reactstrap'
-// import Notifications from "react-notifications-menu"
-import Notifications from './Notification/Notifications'
+import Notifications from "react-notifications-menu"
+// import Notifications from './Notification/Notifications'
 import NotificationCard from './NotificationCard'
 import notifLogo from '../assets/logo24.png'
 import logo from '../assets/NavLogo.png'
