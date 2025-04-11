@@ -16,6 +16,10 @@ from notification import NotificationService
 from notification import send_email_notification
 
 app = Flask(__name__)
+import tomllib
+conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
+assert(conf_loaded == True)
+print(app.config)
 _ = CORS(app)
 login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
 # try to load secret key from app_key file
@@ -85,7 +89,7 @@ def signup():
     password:str = request.get_json()['password']
     email_opt_in:int = int(request.get_json().get('emailOptIn', False))
 
-    user_obj = User(None, email, password, firstName, lastName, contact)
+    user_obj = User(None, email, password, firstName, lastName, contact, email_opt_in)
 
     conn = get_db()
 
@@ -94,29 +98,11 @@ def signup():
     response = {}
     if success:
         response["message"] = "Account created successfully"
+        return jsonify(response)
     else:
         response["message"] = message
+        return jsonify(response), 401
         
-    if (result[0][0] == 0): #Email doesn't exist
-        query = "SELECT COUNT(*) FROM users WHERE contact_number='" + \
-                str(contact) + "';"
-        c.execute(query)
-        result = list(c.fetchall())
-
-        if (result[0][0] != 0): #If contact number exists
-            response["message"] = "An account with this contact already exists"
-            return jsonify(response), 409
-        else:
-            query = """
-                INSERT INTO users(first_name, last_name, email, contact_number, password, email_opt_in)
-                VALUES (?, ?, ?, ?, ?, ?);
-                """
-            c.execute(query, (firstName, lastName, email, contact, password, int(email_opt_in)))
-
-            conn.commit()
-            response["message"] = "Added successfully"
-    else:
-        return jsonify(response), 409
 
 
 """
@@ -698,7 +684,7 @@ def read_all_user_notifications():
     user_id = current_user.id
     try:
         query = '''UPDATE notifications SET read = TRUE 
-                  WHERE read = FALSE and user_id = ?'''
+                  WHERE read = ALSE and user_id = ?'''
         conn = get_db()
         c = conn.cursor()
         _ = c.execute(query, [user_id])
@@ -717,7 +703,8 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
     last_name TEXT NOT NULL, 
     contact_number TEXT NOT NULL UNIQUE, 
     email TEXT UNIQUE, 
-    password TEXT NOT NULL);"""
+    password TEXT NOT NULL,
+    email_opt_in INT NOT NULL);"""
 
 # TODO(kurt): normalize database - don't keep seller_id and seller_email as separate fields
 # use a foreign key to reference the user table instead

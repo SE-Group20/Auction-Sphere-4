@@ -1,7 +1,8 @@
 import sqlite3
 import smtplib
 from email.mime.text import MIMEText
-
+import tomllib
+from flask import current_app as app
 
 def send_email_notification(new_bid_info):
     try:
@@ -24,9 +25,9 @@ def send_email_notification(new_bid_info):
     msg['From'] = "youremail@example.com"
     msg['To'] = ", ".join(recipients)
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+    with smtplib.SMTP(app.config['smtp_server'], 587) as server:
         server.starttls()
-        server.login("youremail@example.com", "yourpassword")
+        server.login(app.config['smtp_username'], app.config['smtp_password'])
         server.sendmail(msg['From'], recipients, msg.as_string())
 
 
@@ -51,9 +52,9 @@ def send_email_notification(new_bid_info):
     msg['From'] = "youremail@example.com"
     msg['To'] = ", ".join(recipients)
 
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+    with smtplib.SMTP(app.config['smtp_server'], 587) as server:
         server.starttls()
-        server.login("youremail@example.com", "yourpassword")
+        server.login(app.config['smtp_username'], app.config['smtp_password'])
         server.sendmail(msg['From'], recipients, msg.as_string())
 
 # TODO: this is never used!

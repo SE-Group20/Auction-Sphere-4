@@ -5,7 +5,7 @@ from flask_login.utils import LocalProxy
 
 
 class User(flask_login.UserMixin):
-    def __init__(self, id:int|None, email:str, password:str, first_name:str, last_name:str, contact_number:str):
+    def __init__(self, id:int|None, email:str, password:str, first_name:str, last_name:str, contact_number:str, email_opt_in:bool=False):
         """
         Initialize a User object.
         Not automatically persisted!
