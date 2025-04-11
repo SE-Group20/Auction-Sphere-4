@@ -1,8 +1,7 @@
 import sqlite3
 import smtplib
 from email.mime.text import MIMEText
-<<<<<<< Updated upstream
-=======
+
 
 def send_email_notification(new_bid_info):
     try:
@@ -29,7 +28,7 @@ def send_email_notification(new_bid_info):
         server.starttls()
         server.login("youremail@example.com", "yourpassword")
         server.sendmail(msg['From'], recipients, msg.as_string())
->>>>>>> Stashed changes
+
 
 def send_email_notification(new_bid_info):
     try:
