@@ -18,8 +18,8 @@ from notification import send_email_notification
 app = Flask(__name__)
 import tomllib
 conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
-assert(conf_loaded == True)
-print(app.config)
+# print(app.config)
+# print(conf_loaded)
 _ = CORS(app)
 login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
 # try to load secret key from app_key file

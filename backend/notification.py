@@ -25,9 +25,9 @@ def send_email_notification(new_bid_info):
     msg['From'] = "youremail@example.com"
     msg['To'] = ", ".join(recipients)
 
-    with smtplib.SMTP(app.config['smtp_server'], 587) as server:
+    with smtplib.SMTP(app.config['SMTP_SERVER'], 587) as server:
         server.starttls()
-        server.login(app.config['smtp_username'], app.config['smtp_password'])
+        server.login(app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'])
         server.sendmail(msg['From'], recipients, msg.as_string())
 
 
@@ -49,12 +49,12 @@ def send_email_notification(new_bid_info):
 
     msg = MIMEText(body)
     msg['Subject'] = subject
-    msg['From'] = "youremail@example.com"
+    msg['From'] = "cloud@kurtw.dev"
     msg['To'] = ", ".join(recipients)
 
-    with smtplib.SMTP(app.config['smtp_server'], 587) as server:
+    with smtplib.SMTP(app.config['SMTP_SERVER'], 587) as server:
         server.starttls()
-        server.login(app.config['smtp_username'], app.config['smtp_password'])
+        server.login(app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'])
         server.sendmail(msg['From'], recipients, msg.as_string())
 
 # TODO: this is never used!
