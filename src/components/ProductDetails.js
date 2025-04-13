@@ -39,13 +39,13 @@ const ProductDetails = () => {
 
     useEffect(() => {
         getProductDetails()
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && localStorage.getItem('auth') === 'true') {
             if (localStorage.getItem('auth') === 'true') {
                 setShowButton(true);
                 checkWatchlistStatus();
             }
         }
-    }, [])
+    }, [id])
 
     const toggleWatchlist = async () => {
         try {

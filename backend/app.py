@@ -691,6 +691,46 @@ def read_all_user_notifications():
         return {"error": "Failed to update notifications"}, 500
 
 
+@app.route('/watchlist/check', methods=['POST'])
+# @login_required
+def check_watchlist():
+    maybe_current_user = flask_login.current_user
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+        return jsonify({"message": "User not logged in"}), 401
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Get product ID from request
+        product_id = data.get('productID')
+        if not product_id:
+            return jsonify({"error": "Product ID is required"}), 400
+
+        # Get current user from Flask-Login
+        user_id = maybe_current_user.id
+
+        # Check if product exists in user's watchlist
+        query = '''SELECT 1 FROM watchlist WHERE user_id = ? AND product_id = ?'''
+        conn = get_db()
+        c = conn.cursor()
+        
+        _ = c.execute(query, [user_id, product_id])
+        
+        is_in_watchlist = c.fetchone() is not None
+
+        return jsonify({
+            "success": True,
+            "isInWatchlist": is_in_watchlist
+        })
+
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
 # Watchlist routes
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
@@ -758,7 +798,7 @@ def remove_from_watchlist():
             return jsonify({"error": "Product ID is required"}), 400
         user_id = maybe_current_user.id
 
-        query = '''"DELETE FROM watchlist WHERE user_id = ? AND product_id = ?'''
+        query = '''DELETE FROM watchlist WHERE user_id = ? AND product_id = ?'''
         conn = get_db()
         c = conn.cursor()
         
@@ -778,27 +818,8 @@ def remove_from_watchlist():
     except Exception as e:
         print(f"Watchlist error: {str(e)}")  # Log for debugging
         return jsonify({"error": "Internal server error"}), 500
-    data = request.get_json()
-    user_id = data['userID']
-    product_id = data['productID']
-        
-    # Remove from database (pseudo-code)
-    # db.execute("DELETE FROM watchlist WHERE user_id = ? AND product_id = ?", (user_id, product_id))
-        
-    return jsonify({"success": True})
 
-# @app.route('/watchlist/check', methods=['POST'])
-# def check_watchlist():
-#     data = request.get_json()
-#     user_id = data['userID']
-#     product_id = data['productID']
-        
-#     # Check database (pseudo-code)
-    
-#     result = db.execute("SELECT 1 FROM watchlist WHERE user_id = ? AND product_id = ?", (user_id, product_id)).fetchone()
-#     is_in_watchlist = bool(result)
-        
-#     return jsonify({"isInWatchlist": is_in_watchlist})
+
 
 database = r"auction.db"
 create_users_table = """CREATE TABLE IF NOT EXISTS users( 
