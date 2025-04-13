@@ -689,11 +689,24 @@ def read_all_user_notifications():
         return {"error": "Failed to update notifications"}, 500
     
 
+@app.route("/logout", methods=["POST"])
+def logout():
+    """
+    Logout the current user
+    """
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+    flask_login.logout_user()
+    return jsonify({"message": "Logged out successfully"})
+
 @app.route("/currentuser", methods=["GET"])
 def get_current_user():
     """
     Get properties of the currently logged in user
     Useful to check if the user is logged in, or to retrieve details
+    As of April 11, 2025, this is not used in the frontend, but could be useful
+    in the future.
     """
     current_user = getuserobject()
     if current_user is None:

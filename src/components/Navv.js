@@ -31,16 +31,25 @@ function Navv(args) {
     
     const toggle = () => setIsOpen(!isOpen)
     const handleLogout = () => {
+         // call /logout 
+        const response = axios.post('/logout')
         localStorage.clear()
-        window.location.reload()
         toast.info('Logged out')
-    }
+        // reload the page in 1s:
+        setTimeout(() => {
+            window.location.reload()
+        }, 1000)
+   }
     
     /**
      * This function fetchs all notifications for the current user
      * Uses global id in app.py to get current user
      */
     const fetchNotifications = async () => {
+        // are we logged in?
+        if (localStorage.getItem('auth') !== 'true') {
+            return
+        }
         try {
             const response = await axios.get(`/notifications/get`);
             // setNotifications(response.data.notifications);
@@ -138,7 +147,7 @@ function Navv(args) {
                                 <NavItem>
                                     <NavLink
                                         style={{ color: 'white' }}
-                                        href="/"
+                                        href="#"
                                         onClick={handleLogout}
                                     >
                                         Logout
