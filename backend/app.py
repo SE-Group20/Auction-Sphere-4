@@ -5,8 +5,6 @@ import sqlite3
 from sqlite3 import Error
 from datetime import datetime, timedelta
 
-from flask_login.utils import LocalProxy
-
 from backend.services.chat import ChatService
 from backend.user import User, MaybeUser
 # from notification import NotificationService
@@ -419,6 +417,17 @@ def get_product_details():
     result = c.execute(query, (productID,))
     prod_details = list(result.fetchall())
 
+    prod_details_dict = {
+        "prod_id": prod_details[0][0],
+        "name": prod_details[0][1],
+        "seller_email": prod_details[0][2],
+        "initial_price": prod_details[0][3],
+        "date": prod_details[0][4],
+        "increment": prod_details[0][5],
+        "deadline_date": prod_details[0][6],
+        "description": prod_details[0][7]
+    }
+
 
     # get highest 10 bids
     query = "SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=? GROUP BY email ORDER BY MAX(bid_amount) DESC LIMIT 10;"
@@ -426,7 +435,7 @@ def get_product_details():
 
     topbids = list(c.fetchall())
 
-    response = {"product": prod_details, "bids": topbids}
+    response = {"product": prod_details_dict, "bids": topbids}
     return response
 
 @app.route("/getName", methods=["GET"])

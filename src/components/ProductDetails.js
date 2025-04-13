@@ -28,7 +28,7 @@ const ProductDetails = () => {
             })
             console.log(data)
             setBids(data.data.bids)
-            setProduct(data.data.product[0])
+            setProduct(data.data.product)
         } catch (error) {
             toast.error('Something went wrong')
         }
@@ -46,7 +46,7 @@ const ProductDetails = () => {
         try {
             let response = await axios.post(`${URL}/message`, {
                 product_id: id,
-                recipient_id: product[0],
+                recipient_id: product.name,
                 message: "hi I am interested in your product"
             })
             console.log(response)
@@ -79,37 +79,37 @@ const ProductDetails = () => {
                             </CardTitle>
                             <CardTitle style={{ textAlign: 'right' }}>
                                 <CountdownTimer
-                                    targetDate={calcDate(product[7])}
+                                    targetDate={calcDate(product.deadline_date)}
                                 />
                             </CardTitle>
                             <hr />
                             <CardImg
-                                src={product[2]}
+                                src={product.prod_id}
                                 className="mx-auto"
                                 style={{ width: '50%' }}
                             />
                             <CardText>
-                                <p>Seller:&nbsp;&nbsp;{product[3]} </p>
+                                <p>Seller:&nbsp;&nbsp;{product.seller_email} </p>
                                 <p>
                                     Minimum price:
                                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    {product[4]}${' '}
+                                    {product.initial_price}${' '}
                                 </p>
                                 <p>
-                                    Date posted: &nbsp;&nbsp;&nbsp;{product[5]}{' '}
+                                    Date posted: &nbsp;&nbsp;&nbsp;{product.date}{' '}
                                 </p>
                                 <p>
                                     Bidding window closes on: &nbsp;&nbsp;&nbsp;
-                                    {product[7]}{' '}
+                                    {product.deadline_date}{' '}
                                 </p>
                                 <p>
                                     Minimum price increment to beat a bid:
                                     &nbsp;&nbsp;&nbsp;
-                                    {product[6]}${' '}
+                                    {product.increment}${' '}
                                 </p>
                                 <p>
                                     Product Description: &nbsp;&nbsp;
-                                    {product[8]}{' '}
+                                    {product.description}{' '}
                                 </p>
                                 {bids.length > 0 ? (
                                     <>
@@ -145,7 +145,7 @@ const ProductDetails = () => {
                                         {showAddBid && (
                                             <AddBid
                                                 productId={id}
-                                                sellerEmail={product[3]}
+                                                sellerEmail={product.seller_email}
                                             />
                                         )}
                                         <Button
