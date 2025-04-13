@@ -149,6 +149,14 @@ function Navv(args) {
                                             Profile
                                         </NavLink>
                                     </NavItem>
+                                <NavItem>
+                                    <NavLink
+                                        href="/watchlist"
+                                        style={{ color: 'white' }}
+                                    >
+                                        Watchlist
+                                    </NavLink>
+                                </NavItem>
                                     
                         </>
                         ) : (
