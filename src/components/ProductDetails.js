@@ -21,6 +21,20 @@ const ProductDetails = () => {
     const [showButton, setShowButton] = useState(false)
     const [bids, setBids] = useState([])
     const [product, setProduct] = useState(null)
+    const [image, setImage] = useState('')
+    const getProductImage = async (prod_id) => {
+        try {
+            console.log('getting image for id ' + prod_id)
+            const response = await axios.post(`${URL}/product/getImage`, {
+                productID: prod_id,
+            })
+            console.log(response)
+            setImage(response.data.result[0])
+        } catch (e) {
+            toast.error(e)
+            console.log(e)
+        }
+    }
     const getProductDetails = async () => {
         try {
             let data = await axios.post(`${URL}/product/getDetails`, {
@@ -29,8 +43,14 @@ const ProductDetails = () => {
             console.log(data)
             setBids(data.data.bids)
             setProduct(data.data.product)
+            if (data.data.product) {
+                getProductImage(data.data.product.prod_id)
+            }else{
+                toast.error('Product not found')
+            }
         } catch (error) {
             toast.error('Something went wrong')
+            console.log(error)
         }
     }
     useEffect(() => {
@@ -75,7 +95,7 @@ const ProductDetails = () => {
                     {product && (
                         <div>
                             <CardTitle tag="h3" style={{ textAlign: 'center' }}>
-                                {product[1]}{' '}
+                                {product.name}{' '}
                             </CardTitle>
                             <CardTitle style={{ textAlign: 'right' }}>
                                 <CountdownTimer
@@ -84,7 +104,7 @@ const ProductDetails = () => {
                             </CardTitle>
                             <hr />
                             <CardImg
-                                src={product.prod_id}
+                                src={image}
                                 className="mx-auto"
                                 style={{ width: '50%' }}
                             />
