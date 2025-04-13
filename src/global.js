@@ -11,5 +11,11 @@ const root_style={
     top: 0,
     left: 0,
 }
-export { URL, root_style }
+
+// check if user is logged in
+const isLoggedIn = () => {
+    return localStorage.getItem('auth') === 'true'
+}
+
+export { URL, root_style, isLoggedIn }
 

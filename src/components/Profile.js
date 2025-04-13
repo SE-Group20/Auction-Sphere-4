@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { root_style, URL } from '../global'
+import { isLoggedIn, root_style, URL } from '../global'
 import { toast } from 'react-toastify'
 import React, { useEffect, useState } from 'react'
 import { Card, CardGroup, Row } from 'reactstrap'
@@ -22,6 +22,14 @@ const Profile = () => {
         }
         fetchData()
     }, [])
+
+    // if not logged in, redirect to login page
+    useEffect(() => {
+        if (isLoggedIn() === false) {
+            window.location.href = '/login'
+        }
+    }, [])
+
     return (
         <>
             <div

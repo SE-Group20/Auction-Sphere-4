@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import Navv from '../Navv'
 import Footer from '../Footer'
 import axios from 'axios'
-import { root_style, URL } from '../../global'
+import { isLoggedIn, root_style, URL } from '../../global'
 import { toast } from 'react-toastify'
 
 /**
@@ -98,7 +98,7 @@ const Signup = () => {
     return (
             <div style={root_style}>
                 <Navv />
-                {localStorage.getItem('auth') === 'true' ? (
+                {isLoggedIn() ? (
                     <></>
                 ) : (
                     <>

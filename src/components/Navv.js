@@ -20,6 +20,7 @@ import Notifications from "react-notifications-menu"
 import NotificationCard from './NotificationCard'
 import notifLogo from '../assets/logo24.png'
 import logo from '../assets/NavLogo.png'
+import { isLoggedIn } from '../global'
 
 /**
  * This component is the Navigation bar of our application.
@@ -47,7 +48,7 @@ function Navv(args) {
      */
     const fetchNotifications = async () => {
         // are we logged in?
-        if (localStorage.getItem('auth') !== 'true') {
+        if (isLoggedIn() === false) {
             return
         }
         try {
@@ -126,7 +127,7 @@ function Navv(args) {
                                 Products
                             </NavLink>
                         </NavItem>
-                        {localStorage.getItem('auth') === 'true' ? (
+                        {isLoggedIn() ? (
                             <>
                                 <NavItem>
                                     <NavLink

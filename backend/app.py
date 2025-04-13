@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, url_for, g
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 import sqlite3
 from sqlite3 import Error
@@ -28,7 +28,7 @@ else:
     import secrets
     app.secret_key = secrets.token_hex(16)
     with open("app_key", "w") as f:
-        f.write(app.secret_key)
+        f.write(str(app.secret_key))
     print("app_key file created - please keep this file safe")
 
 

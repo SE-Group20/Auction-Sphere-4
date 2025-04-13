@@ -5,7 +5,7 @@ import axios from 'axios'
 
 import AddBid from './AddBid'
 import Navv from './Navv'
-import { root_style, URL } from '../global'
+import { isLoggedIn, root_style, URL } from '../global'
 import { toast } from 'react-toastify'
 import CountdownTimer from './Countdown'
 /**
@@ -36,7 +36,7 @@ const ProductDetails = () => {
     useEffect(() => {
         getProductDetails()
         if (typeof window !== 'undefined') {
-            if (localStorage.getItem('auth') === 'true') {
+            if (isLoggedIn()) {
                 setShowButton(true)
             }
         }
