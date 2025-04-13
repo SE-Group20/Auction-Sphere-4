@@ -3,7 +3,7 @@ import { Form, FormGroup, Label, Input, Navbar, Button } from 'reactstrap'
 import { useNavigate } from 'react-router-dom'
 import Navv from './Navv'
 import Footer from './Footer'
-import { URL } from '../global'
+import { root_style, URL } from '../global'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { isLabelWithInternallyDisabledControl } from '@testing-library/user-event/dist/utils'
@@ -86,17 +86,9 @@ const Sell = () => {
     }, [])
 
     return (
-        <body
-            style={{
-                background: 'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                left: 0,
-                bottom: 0,
-            }}
-        >
-            <div>
+            <div 
+                style={root_style} 
+            >
                 <Navv />
 
                 <Form
@@ -175,7 +167,6 @@ const Sell = () => {
                 </Form>
                 <Footer />
             </div>
-        </body>
     )
 }
 

@@ -13,6 +13,7 @@ import sunglass from '../assets/sungalss.jpeg'
 import ProductView from './ProductView'
 import '../css/gallery.css'
 import logo2 from '../assets/logo_new2.png'
+import { root_style } from '../global'
 /**
  * This component displays information about our project.
  */
@@ -21,16 +22,7 @@ const About = () => {
     return (
         <>
             <div
-                style={{
-                    background:
-                        'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                    backgroundAttachment: 'scroll',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                }}
+                style={root_style}
             >
                 <Navv />
                 <div

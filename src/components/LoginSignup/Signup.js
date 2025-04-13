@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import Navv from '../Navv'
 import Footer from '../Footer'
 import axios from 'axios'
-import { URL } from '../../global'
+import { root_style, URL } from '../../global'
 import { toast } from 'react-toastify'
 
 /**
@@ -96,17 +96,7 @@ const Signup = () => {
     })
     const [errors, setErrors] = useState({});
     return (
-        <body
-            style={{
-                background: 'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                left: 0,
-                bottom: 0,
-            }}
-        >
-            <div>
+            <div style={root_style}>
                 <Navv />
                 {localStorage.getItem('auth') === 'true' ? (
                     <></>
@@ -263,7 +253,6 @@ const Signup = () => {
                 )}
                 <Footer style={{ margin: '1rem' }}></Footer>
             </div>
-        </body>
     )
 }
 

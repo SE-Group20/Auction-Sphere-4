@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { URL } from '../global'
+import { root_style, URL } from '../global'
 import { toast } from 'react-toastify'
 import Navv from './Navv'
 import ConversationsList from './messagingComponents/ConversationsList'
@@ -22,17 +22,7 @@ const Messages = () => {
     }, [])
     return (
         <>
-            <div
-                style={{
-                    background:
-                        'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                    backgroundAttachment: 'scroll',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0
-                }}
-            >
+            <div style={root_style}>
                 <Navv />
                 <div>
                     {data ? (

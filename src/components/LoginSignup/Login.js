@@ -14,7 +14,7 @@ import {
 import axios from 'axios'
 import Navv from '../Navv'
 import Footer from '../Footer'
-import { URL } from '../../global'
+import { root_style, URL } from '../../global'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -58,16 +58,7 @@ const Login = () => {
         password: '',
     })
     return (
-        <div
-            style={{
-                background: 'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                left: 0,
-                bottom: 0,
-            }}
-        >
+        <div style={root_style}>
             <div>
                 <Navv />
                 <Card

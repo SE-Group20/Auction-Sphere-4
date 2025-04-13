@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Footer from './Footer'
 import Navv from './Navv'
 import ProductCard from './ProductCard'
-import { URL } from '../global'
+import { root_style, URL } from '../global'
 import axios from 'axios'
 import { CardGroup, Row } from 'reactstrap'
 import { toast } from 'react-toastify'
@@ -30,16 +30,7 @@ const Products = () => {
 
     return (
         <>
-            <div
-                style={{
-                    background:
-                        'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                    backgroundAttachment: 'scroll',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                }}
-            >
+            <div style={root_style}>
                 <Navv />
                 <Row style={{ margin: '5rem' }}>
                     {apiData && apiData.products ? (

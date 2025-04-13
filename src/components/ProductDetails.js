@@ -5,7 +5,7 @@ import axios from 'axios'
 
 import AddBid from './AddBid'
 import Navv from './Navv'
-import { URL } from '../global'
+import { root_style, URL } from '../global'
 import { toast } from 'react-toastify'
 import CountdownTimer from './Countdown'
 /**
@@ -59,15 +59,7 @@ const ProductDetails = () => {
     return (
         <>
             <div
-                style={{
-                    background:
-                        'linear-gradient(30deg, #020024, #090979,#94bbe9)',
-                    backgroundAttachment: 'scroll',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                }}
+                style={root_style}
             >
                 <Navv />
                 <Card
