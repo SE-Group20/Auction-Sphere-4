@@ -65,6 +65,14 @@ def get_db() -> sqlite3.Connection:
     return db
 
 
+def getuserobject() -> User|None:
+    maybe_current_user: MaybeUser = flask_login.current_user
+    if not maybe_current_user or maybe_current_user.is_authenticated is False:
+        return None
+    # must be a user - safe to cast
+    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
+    return current_user
+
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
@@ -146,12 +154,9 @@ It shows the products the user has put for sale and the products for which the u
 
 @app.route('/profile', methods=["POST"])
 def profile():
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     # create db connection
     conn = get_db()
     c = conn.cursor()
@@ -544,11 +549,9 @@ product is specified by product_id, and message is stored in message.
 def send_message():
     product_id:str = request.get_json()['product_id']
     # sender_id = global_id
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     sender_id = current_user.id
     recipient_id:str = request.get_json()['recipient_id']
     message:str = request.get_json()['message']
@@ -561,11 +564,9 @@ get_messages returns the last message of each conversation chain the user is par
 """
 @app.route("/messages", methods=["GET"])
 def get_messages():
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     return chatService.get_messages(current_user.id)
 
 """
@@ -573,11 +574,9 @@ read message returns all messages for a conversation given its product_id and bi
 """
 @app.route("/message/product/<product_id>/bidder/<bidder_id>", methods=["GET"])
 def read_message(product_id, bidder_id):
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     return chatService.read_message(current_user.id,bidder_id, product_id)
 
   
@@ -620,12 +619,9 @@ are extracted from the database.
 """
 @app.route("/notifications/get", methods=["GET"])
 def get_user_notifications():
-    maybe_current_user = flask_login.current_user
-    print("maybe_current_user:", maybe_current_user)
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     user_id = current_user.id
     query = '''SELECT notif_id,message,detail_page,time_sent 
                 FROM notifications 
@@ -675,11 +671,9 @@ Here, a notification is set to read if not already read.
 """
 @app.route("/notifications/read", methods=["PUT"])
 def read_all_user_notifications():
-    maybe_current_user: MaybeUser = flask_login.current_user
-    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+    current_user = getuserobject()
+    if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    # must be a user - safe to cast
-    current_user: User = maybe_current_user # pyright:ignore[reportAssignmentType]
     user_id = current_user.id
     try:
         query = '''UPDATE notifications SET read = TRUE 
@@ -693,6 +687,25 @@ def read_all_user_notifications():
         return response
     except Exception as e:
         return {"error": "Failed to update notifications"}, 500
+    
+
+@app.route("/currentuser", methods=["GET"])
+def get_current_user():
+    """
+    Get properties of the currently logged in user
+    Useful to check if the user is logged in, or to retrieve details
+    """
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+    response = {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "contact_number": current_user.contact_number
+    }
+    return jsonify(response)
 
 
 database = r"auction.db"
