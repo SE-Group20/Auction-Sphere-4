@@ -24,8 +24,12 @@ if os.path.exists(key_file):
     with open("app_key", "r") as f:
         app.secret_key = f.read()
 else:
-    print("app_key file not found!")
-    quit()
+    print("app_key file not found - creating a random key")
+    import secrets
+    app.secret_key = secrets.token_hex(16)
+    with open("app_key", "w") as f:
+        f.write(app.secret_key)
+    print("app_key file created - please keep this file safe")
 
 
 chatService = ChatService()
