@@ -21,6 +21,9 @@ const ProductDetails = () => {
     const [showButton, setShowButton] = useState(false)
     const [bids, setBids] = useState([])
     const [product, setProduct] = useState(null)
+    const [isInWatchlist, setIsInWatchlist] = useState(false);
+    const [image, setImage] = useState(null)
+
     const getProductDetails = async () => {
         try {
             let data = await axios.post(`${URL}/product/getDetails`, {
@@ -33,14 +36,46 @@ const ProductDetails = () => {
             toast.error('Something went wrong')
         }
     }
+
     useEffect(() => {
         getProductDetails()
         if (typeof window !== 'undefined') {
             if (localStorage.getItem('auth') === 'true') {
-                setShowButton(true)
+                setShowButton(true);
+                checkWatchlistStatus();
             }
         }
     }, [])
+
+    const toggleWatchlist = async () => {
+        try {
+            if (isInWatchlist) {
+
+                let data = await axios.post(`${URL}/watchlist/remove`, {
+                    productID: id,
+                })
+                console.log(data)
+                // await axios.post(`${URL}/watchlist/remove`, {
+                //     product_id: id,
+                //     user_id: localStorage.getItem('userID') // Assuming you store userID in localStorage
+                // });
+                toast.success("Removed from watchlist");
+            } else {
+                let data = await axios.post(`${URL}/watchlist/add`, {
+                    productID: id,
+                })
+                console.log(data)
+                // await axios.post(`${URL}/watchlist/add`, {
+                //     product_id: id,
+                //     user_id: localStorage.getItem('userID')
+                // });
+                toast.success("Added to watchlist");
+            }
+            setIsInWatchlist(!isInWatchlist);
+        } catch (error) {
+            toast.error("Failed to update watchlist");
+        }
+    };
 
     const sendMessage = async () => {
         try {
@@ -55,6 +90,37 @@ const ProductDetails = () => {
             toast.error(error)
         }
     }
+
+
+    const checkWatchlistStatus = async () => {
+        try {
+            const response = await axios.post(`${URL}/watchlist/check`, {
+                productID: id,
+                userID: localStorage.getItem('userID')
+            });
+            setIsInWatchlist(response.data.isInWatchlist);
+        } catch (error) {
+            console.error("Error checking watchlist:", error);
+        }
+    };
+
+    const fetchImage = async () => {
+        try {
+            const response = await axios.post(`${URL}/product/getImage`, {
+                productID: product[0],
+            })
+            console.log(response)
+            setImage(response.data.result[0])
+        } catch (e) {
+            toast.error(e)
+        }
+    }
+
+    useEffect(() => {
+        fetchImage()
+    }, [])
+
+
 
     return (
         <>
@@ -92,32 +158,32 @@ const ProductDetails = () => {
                             </CardTitle>
                             <hr />
                             <CardImg
-                                src={product[2]}
+                                src={image}
                                 className="mx-auto"
                                 style={{ width: '50%' }}
                             />
                             <CardText>
-                                <p>Seller:&nbsp;&nbsp;{product[3]} </p>
+                                <p>Seller:&nbsp;&nbsp;{product[2]} </p>
                                 <p>
                                     Minimum price:
                                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                    {product[4]}${' '}
+                                    {product[3]}${' '}
                                 </p>
                                 <p>
-                                    Date posted: &nbsp;&nbsp;&nbsp;{product[5]}{' '}
+                                    Date posted: &nbsp;&nbsp;&nbsp;{product[4]}{' '}
                                 </p>
                                 <p>
                                     Bidding window closes on: &nbsp;&nbsp;&nbsp;
-                                    {product[7]}{' '}
+                                    {product[6]}{' '}
                                 </p>
                                 <p>
                                     Minimum price increment to beat a bid:
                                     &nbsp;&nbsp;&nbsp;
-                                    {product[6]}${' '}
+                                    {product[5]}${' '}
                                 </p>
                                 <p>
                                     Product Description: &nbsp;&nbsp;
-                                    {product[8]}{' '}
+                                    {product[7]}{' '}
                                 </p>
                                 {bids.length > 0 ? (
                                     <>
@@ -142,6 +208,7 @@ const ProductDetails = () => {
                                             onClick={() =>
                                                 setShowAddBid(!showAddBid)
                                             }
+                                            style={{ margin: '5px' }}
                                         >
                                             {showAddBid ? (
                                                 <span>-</span>
@@ -159,8 +226,16 @@ const ProductDetails = () => {
                                         <Button
                                             color="info"
                                             onClick={() => sendMessage()}
+                                            style={{ margin: '5px' }}
                                         >
                                             Message Seller
+                                        </Button>
+                                        <Button 
+                                            color="info"
+                                            onClick={() => toggleWatchlist()}
+                                            style={{ margin: '5px' }}
+                                        >
+                                            {isInWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
                                         </Button>
                                     </>
                                 )}
