@@ -13,7 +13,7 @@ const Watchlist = () => {
 
     const getProducts = async () => {
         try {
-            let data = await axios.get(`${URL}/getLatestProducts`)
+            let data = await axios.get(`${URL}/watchlist/items`)
             console.log(data.data)
             setApiData(data.data)
         } catch (error) {

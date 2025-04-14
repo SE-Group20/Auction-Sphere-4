@@ -690,6 +690,7 @@ def read_all_user_notifications():
     except Exception as e:
         return {"error": "Failed to update notifications"}, 500
 
+# Watchlist routes
 
 @app.route('/watchlist/check', methods=['POST'])
 # @login_required
@@ -731,7 +732,7 @@ def check_watchlist():
         print(f"Unexpected error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
-# Watchlist routes
+
 @app.route('/watchlist/add', methods=['POST'])
 def add_to_watchlist():
     if request.method == 'OPTIONS':
@@ -817,6 +818,52 @@ def remove_from_watchlist():
         return jsonify({"error": "Database integrity error"}), 400
     except Exception as e:
         print(f"Watchlist error: {str(e)}")  # Log for debugging
+        return jsonify({"error": "Internal server error"}), 500
+    
+@app.route('/watchlist/items', methods=['GET'])
+def get_watchlist_items():
+    maybe_current_user = flask_login.current_user
+    if not maybe_current_user or maybe_current_user.is_authenticated == False:
+        return jsonify({"message": "User not logged in"}), 401
+    try:
+        user_id = maybe_current_user.id
+        
+        query = '''SELECT p.prod_id, p.name, p.seller_email, p.initial_price, p.date, p.increment, p.deadline_date, p.description
+            FROM product p, watchlist w
+            WHERE p.prod_id = w.product_id AND w.user_id = ?
+            ORDER BY w.created_at DESC'''
+        conn = get_db()
+        c = conn.cursor()
+
+        watchlist_prod_result = c.execute(query, [user_id])
+        products:list[tuple[str,...]] = list(watchlist_prod_result.fetchall())
+        #print("Products got:", products)
+        highestBids:list[int] = []
+        names:list[str] = []
+        for product in products:
+            prod_result = c.execute("SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=?;", (product[0],))
+            prod_result_list:list[tuple[str|None, int]] = list(prod_result.fetchall())
+            if (prod_result_list[0][0] is not None):
+                this_prod = prod_result_list[0]
+                highestBids.append(this_prod[1])
+                bidders_result = c.execute("SELECT first_name, last_name FROM users WHERE email=?;", (this_prod[0],))
+                bidders_result_list:list[tuple[str, str]] = list(bidders_result.fetchall())
+                names.append(bidders_result_list[0][0] + " " + bidders_result_list[0][1])
+            else:
+                highestBids.append(-1)
+                names.append("N/A")
+        response = {
+            "products": products,
+            "maximumBids": highestBids,
+            "names": names}
+        #print(response)
+        return jsonify(response)
+        
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 
