@@ -866,6 +866,29 @@ def get_watchlist_items():
         print(f"Unexpected error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
+@app.route("/watchlist/users", methods=["GET"])
+def get_watchlist_users():
+    product_id = request.args.get('productId')
+    if not product_id:
+        return jsonify({"error": "productId parameter is required"}), 400
+    
+    query = '''SELECT DISTINCT u.user_id, u.email 
+               FROM users u, watchlist w 
+               WHERE u.user_id = w.user_id AND w.product_id = ?'''
+    
+    conn = get_db()
+    c = conn.cursor()
+    watchers_results = c.execute(query, [product_id])
+    results = list(watchers_results.fetchall())
+    
+    users = []
+    for row in results:
+        users.append({
+            "user_id": row[0],
+            "email": row[1]
+        })
+    
+    return jsonify({"users": users})
 
 
 database = r"auction.db"
