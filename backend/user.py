@@ -5,7 +5,7 @@ from flask_login.utils import LocalProxy
 
 
 class User(flask_login.UserMixin):
-    def __init__(self, id:int|None, email:str, password:str, first_name:str, last_name:str, contact_number:str):
+    def __init__(self, id:int|None, email:str, password:str, first_name:str, last_name:str, contact_number:str, email_opt_in:bool=False):
         """
         Initialize a User object.
         Not automatically persisted!
@@ -22,6 +22,7 @@ class User(flask_login.UserMixin):
         self.first_name:str = first_name
         self.last_name:str = last_name
         self.contact_number:str = contact_number
+        self.email_opt_in:bool = email_opt_in
 
     def try_signup(self, conn: sqlite3.Connection) -> tuple[bool, str]:
         """
@@ -47,8 +48,8 @@ class User(flask_login.UserMixin):
 
         # Insert the new user into the database
         cursor = cursor.execute(
-            "INSERT INTO users (email, password, first_name, last_name, contact_number) VALUES (?, ?, ?, ?, ?)",
-            (self.email, self.password, self.first_name, self.last_name, self.contact_number),
+            "INSERT INTO users (email, password, first_name, last_name, contact_number, email_opt_in) VALUES (?, ?, ?, ?, ?)",
+            (self.email, self.password, self.first_name, self.last_name, self.contact_number, self.email_opt_in)
         )
         conn.commit()
         return True, "User signed up successfully."
@@ -62,18 +63,17 @@ class User(flask_login.UserMixin):
         :return: User object or None if not found
         """
         cursor = conn.cursor()
-        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number FROM users WHERE email = ?", (email,))
+        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number, email_opt_in FROM users WHERE email = ?", (email,))
         user_data:tuple[str,...]|None = result.fetchone()
         if user_data:
-            if len(user_data) != 6:
-                raise ValueError("User data does not contain all required fields.")
             return User(
                 id=int(user_data[0]),
                 email=user_data[1],
                 password=user_data[2],
                 first_name=user_data[3],
                 last_name=user_data[4],
-                contact_number=user_data[5]
+                contact_number=user_data[5],
+                email_opt_in=bool(user_data[6])
             )
         return None
 
@@ -86,7 +86,7 @@ class User(flask_login.UserMixin):
         :return: User object or None if not found
         """
         cursor = conn.cursor()
-        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number, email_opt_in FROM users WHERE user_id = ?", (user_id,))
         user_data:tuple[str,...]|None = result.fetchone()
         if user_data:
             return User(
@@ -95,7 +95,8 @@ class User(flask_login.UserMixin):
                 password=user_data[2],
                 first_name=user_data[3],
                 last_name=user_data[4],
-                contact_number=user_data[5]
+                contact_number=user_data[5],
+                email_opt_in=bool(user_data[6])
             )
         return None
 
@@ -110,7 +111,7 @@ class User(flask_login.UserMixin):
         """
         cursor = conn.cursor()
         # TODO(kurt): Use hashed password
-        result = cursor.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
+        result = cursor.execute("SELECT user_id, email, password, first_name, last_name, contact_number, email_opt_in FROM users WHERE email = ? AND password = ?", (email, password))
         user:tuple[str,...]|None = result.fetchone()
         if user:
             return User(
@@ -119,7 +120,8 @@ class User(flask_login.UserMixin):
                 password=user[2],
                 first_name=user[3],
                 last_name=user[4],
-                contact_number=user[5]
+                contact_number=user[5],
+                email_opt_in=bool(user[6])
             )
         return None
 

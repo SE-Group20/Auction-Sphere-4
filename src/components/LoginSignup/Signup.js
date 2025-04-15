@@ -54,10 +54,10 @@ const Signup = () => {
         event.preventDefault()
         let newErrors = {};
         Object.keys(formData).forEach((key) => {
-            if (!formData[key].trim()) {
-                newErrors[key] = `${formatFieldName(key)} is required`;
+            if (typeof formData[key] === "string" && formData[key].trim() === "") {
+              errors[key] = "This field is required";
             }
-        });
+          });          
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             toast.error('Fill out all fields before submitting');
@@ -93,6 +93,7 @@ const Signup = () => {
         // address: "",
         password: '',
         confirmPassword: '',
+        emailOptIn: false,
     })
     const [errors, setErrors] = useState({});
     return (
@@ -242,6 +243,20 @@ const Signup = () => {
                                             />
                                             {errors.confirmPassword && <small style={{ color: 'red' }}>{errors.confirmPassword}</small>}
                                         </FormGroup>
+
+                                        <FormGroup check>
+                                            <Input
+                                                type="checkbox"
+                                                id="emailOptIn"
+                                                name="emailOptIn"
+                                                checked={formData.emailOptIn || false}
+                                                onChange={(e) => setFormData({ ...formData, emailOptIn: e.target.checked })}
+                                            />
+                                            <Label check htmlFor="emailOptIn">
+                                                Receive email notifications for new bids
+                                            </Label>
+                                            </FormGroup>
+
                                         <Button color="primary">Submit</Button>
                                     </Form>
                                 </CardText>

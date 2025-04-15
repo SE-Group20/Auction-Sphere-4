@@ -7,12 +7,21 @@ from datetime import datetime, timedelta
 
 from backend.services.chat import ChatService
 from backend.user import User, MaybeUser
+from user import User, MaybeUser
 # from notification import NotificationService
 # https://flask-login.readthedocs.io/en/latest/
 import flask_login
 login_manager = flask_login.LoginManager()
+from services.chat import ChatService
+from pytest import param
+from notification import NotificationService
+from notification import send_email_notification
 
 app = Flask(__name__)
+import tomllib
+conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
+# print(app.config)
+# print(conf_loaded)
 _ = CORS(app)
 login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
 # try to load secret key from app_key file
@@ -92,8 +101,9 @@ def signup():
     email:str = request.get_json()['email']
     contact:str = request.get_json()['contact']
     password:str = request.get_json()['password']
+    email_opt_in:int = int(request.get_json().get('emailOptIn', False))
 
-    user_obj = User(None, email, password, firstName, lastName, contact)
+    user_obj = User(None, email, password, firstName, lastName, contact, email_opt_in)
 
     conn = get_db()
 
@@ -102,13 +112,11 @@ def signup():
     response = {}
     if success:
         response["message"] = "Account created successfully"
-    else:
-        response["message"] = message
-
-    if success:
         return jsonify(response)
     else:
-        return jsonify(response), 409
+        response["message"] = message
+        return jsonify(response), 401
+        
 
 
 """
@@ -265,9 +273,10 @@ def create_bid():
             "INSERT OR REPLACE INTO bids(prod_id,email,bid_amount,created_at) VALUES (?,?,?,?);",
             (productId, email, amount, currentTime))
         conn.commit()
-
+        # ⬇️ Trigger email notification to opted-in users
+        send_email_notification(f"New bid of ${amount} placed on Product ID: {productId}")
         response["message"] = "Saved Bid"
-    return jsonify(response)
+    return jsonify(response)    
 
 """
 API end point to get a previous bid.
@@ -686,7 +695,7 @@ def read_all_user_notifications():
     user_id = current_user.id
     try:
         query = '''UPDATE notifications SET read = TRUE 
-                  WHERE read = FALSE and user_id = ?'''
+                  WHERE read = ALSE and user_id = ?'''
         conn = get_db()
         c = conn.cursor()
         _ = c.execute(query, [user_id])
@@ -737,7 +746,8 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
     last_name TEXT NOT NULL, 
     contact_number TEXT NOT NULL UNIQUE, 
     email TEXT UNIQUE, 
-    password TEXT NOT NULL);"""
+    password TEXT NOT NULL,
+    email_opt_in INT NOT NULL);"""
 
 # TODO(kurt): normalize database - don't keep seller_id and seller_email as separate fields
 # use a foreign key to reference the user table instead

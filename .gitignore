@@ -6,3 +6,6 @@ coverage/
 backend/auction.db
 backend/app_key
 package-lock.json
+backend/notifications.toml
+
+
