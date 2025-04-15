@@ -57,7 +57,7 @@ const ProductCard = ({ product, maxBid, name, profileView = false }) => {
                 <CardImg
                     className="mx-auto"
                     src={image}
-                    style={{ width: '50%', textAlign: 'center' }}
+                    style={{ width: '33%', textAlign: 'center' }}
                 />
                 {/* <img alt="Sample" src={image} /> */}
                 <CardBody>
