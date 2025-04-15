@@ -7,36 +7,45 @@ from sqlite3 import Error
 # from notification import NotificationService
 # https://flask-login.readthedocs.io/en/latest/
 import flask_login
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, has_app_context, jsonify, request
 from flask_cors import CORS
-from user import MaybeUser, User
+from backend.user import MaybeUser, User
 
 from backend.services.chat import ChatService
 from backend.notification import send_email_notification
 
 login_manager = flask_login.LoginManager()
 
-app = Flask(__name__)
 
-conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
-# print(app.config)
-# print(conf_loaded)
-_ = CORS(app)
-login_manager.init_app(app) # pyright:ignore[reportUnknownMemberType]
-# try to load secret key from app_key file
-this_file_dir = os.path.dirname(os.path.abspath(__file__))
-key_file = os.path.join(this_file_dir, "app_key")
-if os.path.exists(key_file):
-    with open("app_key", "r") as f:
-        app.secret_key = f.read()
-else:
-    print("app_key file not found - creating a random key")
-    import secrets
-    app.secret_key = secrets.token_hex(16)
-    with open("app_key", "w") as f:
-        f.write(str(app.secret_key))
-    print("app_key file created - please keep this file safe")
+def create_app():
+    """
+    Create a Flask application.
+    """
+    # Create the Flask app
+    app = Flask(__name__)
+    # Load the configuration from a file
+    conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
+    assert conf_loaded, "Failed to load configuration file"
+    this_file_dir = os.path.dirname(os.path.abspath(__file__))
+    key_file = os.path.join(this_file_dir, "app_key")
+    if os.path.exists(key_file):
+        with open(key_file, "r") as f:
+            app.secret_key = f.read()
+    else:
+        print("app_key file not found - creating a random key")
+        import secrets
+        app.secret_key = secrets.token_hex(16)
+        with open("app_key", "w") as f:
+            f.write(str(app.secret_key))
+        print("app_key file created - please keep this file safe")
+    # Initialize CORS
+    _ = CORS(app)
+    # Initialize the login manager
+    login_manager.init_app(app)  # pyright:ignore[reportUnknownMemberType]
+    return app
 
+app = create_app()
+app.config['DATABASE'] = 'auction.db'
 
 chatService = ChatService()
 
@@ -62,12 +71,18 @@ def convertToBinaryData(filename:str):
     return blobData
 
 
-database_file = r"auction.db"
 
 def get_db() -> sqlite3.Connection:
-    db:sqlite3.Connection|None = getattr(g, '_database', None)
+    # this may be called outside of the app context, so
+    if has_app_context():
+        db:sqlite3.Connection|None = getattr(g, '_database', None)
+    else:
+        db:sqlite3.Connection|None = None
     if db is None:
-        db = g._database = sqlite3.connect(database_file)
+        database_file = app.config['DATABASE']
+        db = sqlite3.connect(database_file)
+        if has_app_context():
+            g._database = db
     return db
 
 
@@ -574,7 +589,7 @@ def send_message():
     recipient_id:str = request.get_json()['recipient_id']
     message:str = request.get_json()['message']
 
-    return chatService.send_message(message, recipient_id, sender_id, product_id)
+    return chatService.send_message(get_db(), message, recipient_id, sender_id, product_id)
 
 
 """
@@ -585,7 +600,7 @@ def get_messages():
     current_user = getuserobject()
     if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    return chatService.get_messages(current_user.id)
+    return chatService.get_messages(get_db(), current_user.id)
 
 """
 read message returns all messages for a conversation given its product_id and bidder_id
@@ -595,7 +610,7 @@ def read_message(product_id, bidder_id):
     current_user = getuserobject()
     if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    return chatService.read_message(current_user.id,int(bidder_id), int(product_id))
+    return chatService.read_message(get_db(), current_user.id,int(bidder_id), int(product_id))
 
   
 """
@@ -937,7 +952,6 @@ def get_watchlist_users():
     return jsonify({"users": users})
 
 
-database = r"auction.db"
 create_users_table = """CREATE TABLE IF NOT EXISTS users( 
     user_id INTEGER PRIMARY KEY AUTOINCREMENT, 
     first_name TEXT NOT NULL, 
@@ -1000,25 +1014,25 @@ create_watchlist_table = """CREATE TABLE IF NOT EXISTS watchlist(
 )"""
 
 
-"""Create Connection to database"""
-conn = sqlite3.connect(database_file, check_same_thread=False)
+def init_db(conn):
+    if conn is not None:
+        print("Creating tables... for " + app.config['DATABASE'])
+        create_table(conn, create_users_table)
+        create_table(conn, create_product_table)
+        create_table(conn, create_bids_table)
+        create_table(conn, create_table_claims)
 
-if conn is not None:
-    create_table(conn, create_users_table)
-    create_table(conn, create_product_table)
-    create_table(conn, create_bids_table)
-    create_table(conn, create_table_claims)
+        create_table(conn, create_message_table)
+        create_table(conn, create_notification_table)
+        create_table(conn, create_watchlist_table)
+        conn.commit()
 
-    create_table(conn, create_message_table)
-    create_table(conn, create_notification_table)
-    create_table(conn, create_watchlist_table)
-    cursor = conn.cursor()
-    conn.commit()
+        conn.close()
+    else:
+        print("Error! Cannot create the database connection")
 
-    conn.close()
-else:
-    print("Error! Cannot create the database connection")
+init_db(get_db())
 
 if __name__ == "__main__":
-    app.debug = True
+    init_db(get_db())
     app.run()

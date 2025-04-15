@@ -6,7 +6,8 @@ from flask import current_app as app
 
 def send_email_notification(new_bid_info):
     try:
-        conn = sqlite3.connect('auction.db', check_same_thread=False)
+        database_file = app.config['DATABASE']
+        conn = sqlite3.connect(database_file, check_same_thread=False)
         c = conn.cursor()
     except sqlite3.Error as e:
         print(e)
@@ -33,11 +34,12 @@ def send_email_notification(new_bid_info):
 
 # TODO: this is never used!
 class NotificationService:
-    try:
-        conn = sqlite3.connect('auction.db', check_same_thread=False)
-        cursor = conn.cursor()
-    except sqlite3.Error as e:
-        print(e)
+    def __init__(self, app):
+        try:
+            database_file = app.config['DATABASE']
+            self.conn = sqlite3.connect(database_file, check_same_thread=False)
+        except sqlite3.Error as e:
+            print(e)
 
     def get_user_notifications(self,user_id):
         print(user_id)
@@ -45,9 +47,9 @@ class NotificationService:
                     FROM notifications 
                     WHERE user_id = ? AND read = FALSE'''
         message_details = [user_id]
-        
-        self.cursor.execute(query, message_details)
-        results = list(self.cursor.fetchall())
+        cursor = self.conn.cursor()
+        cursor.execute(query, message_details)
+        results = list(cursor.fetchall())
         print(results)
         if len(results) == 0:
             return {"notifications": "[]"}

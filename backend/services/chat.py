@@ -1,51 +1,44 @@
 import sqlite3
 
-
 class ChatService:
-
-    try:
-        conn = sqlite3.connect('auction.db', check_same_thread=False)
-    except sqlite3.Error as e:
-        print(e)
-
     """
     send_message adds a new message to the messages table using the provided parameters of
     message, recipient_id, sender_id, product_id
     """
-    def send_message(self, message, recipient_id, sender_id, product_id):
+    def send_message(self, conn, message, recipient_id, sender_id, product_id):
         query= '''INSERT INTO messages (sender_id, recipient_id, product_id, message) 
             VALUES (?, ?, ?, ?)'''
         message_details = [sender_id, recipient_id, product_id, message]
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(query, message_details)
-        self.conn.commit()
+        conn.commit()
 
         return {"message": "Message sent successfully"}
 
     """
     user_is_product_seller tests if user_id is the user_id of the specified product
     """
-    def user_is_product_seller(self, product_id, user_id):
+    def user_is_product_seller(self, conn, product_id, user_id):
         query= '''SELECT EXISTS(SELECT 1 FROM product WHERE prod_id = ? AND seller_id = ?)'''
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(query, (product_id, user_id))
         return cursor.fetchone()[0]
 
     """
     set_messages_to_read sets the status of mesesages to read given the user ids
     """
-    def set_messages_to_read(self, product_id, current_user, sender_id):
+    def set_messages_to_read(self, conn, product_id, current_user, sender_id):
         query = '''UPDATE messages SET read = 1 WHERE product_id = ? AND recipient_id = ? AND sender_id = ?'''
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(query, (product_id, current_user, sender_id))
-        self.conn.commit()
+        conn.commit()
 
 
     """
     read_message sends an sql query to return all messages for a given conversation on a product
     by providing the current user_id, the bidder's user_id, and the product_id
     """
-    def read_message(self, user_id, bidder_user_id, product_id):
+    def read_message(self, conn, user_id, bidder_user_id, product_id):
         query = '''SELECT 
         u.first_name,
         u.last_name,
@@ -65,20 +58,20 @@ class ChatService:
         ORDER BY time_sent DESC'''
         message_details = [bidder_user_id, user_id, product_id]
         print("message details: ", message_details)
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(query, message_details)
         results = list(cursor.fetchall())
         print("got results: ", results)
         if len(results) == 0:
             return []
         else:
-            self.set_messages_to_read(product_id, user_id, results[0][7])
+            self.set_messages_to_read(conn, product_id, user_id, results[0][7])
             return results
 
     """
     get_messages returns a list a of the last conversation messasges for each conversation user_id is involved in
     """
-    def get_messages(self, user_id):
+    def get_messages(self, conn, user_id):
         print(user_id)
         query = '''WITH conversation_set AS (
     SELECT
@@ -119,7 +112,7 @@ ORDER BY m.time_sent DESC'''
 
         message_details = [user_id, user_id, user_id, user_id]
 
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(query, message_details)
         results = list(cursor.fetchall())
 
