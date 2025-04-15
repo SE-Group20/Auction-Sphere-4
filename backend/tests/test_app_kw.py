@@ -45,8 +45,17 @@ class Helpers:
         'productName': 'Test Product',
         'initialPrice': 100,
         'increment': 10,
-        'photo': '',
+        'photo': 'image_binary_data0',
         'description': 'This is a test product.',
+        'biddingTime': 14, # in days
+    }
+
+    product1_data = {
+        'productName': 'Test Product 2',
+        'initialPrice': 200,
+        'increment': 20,
+        'photo': 'image_binary_data1',
+        'description': 'This is a test product 2.',
         'biddingTime': 14, # in days
     }
 
@@ -619,3 +628,343 @@ def test_get_bids(client: FlaskClient, app):
     response = client.get('bid/get', query_string={'prodId': product_id})
     assert response.status_code == 200
     # TODO: verify response data
+
+
+def test_get_all_products(client: FlaskClient, app):
+    """
+    Test the get all products functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create both products
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+    response = client.post('/product/create', json=Helpers.product1_data)
+    assert response.status_code == 200
+
+    # Get all products
+    response = client.get('/product/listAll')
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert len(response_json["result"]) == 2
+
+
+def test_get_product_image(client: FlaskClient, app):
+    """
+    Test the get product image functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Get the product image
+    response = client.post('/product/getImage', json={
+        'productID': product_id
+    })
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert len(response_json['result']) == 1
+    assert response_json['result'][0][0] == Helpers.product0_data['photo']
+
+
+def test_product_getowner(client: FlaskClient, app):
+    """
+    Test the get product owner functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Get the product owner
+    response = client.post('/getOwner', json={
+        'productID': product_id
+    })
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert len(response_json['result']) == 1
+    assert response_json['result'][0][0] == Helpers.user0_signup_data['email']
+
+
+def test_product_getdetails(client: FlaskClient, app):
+    """
+    Test the get product details functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Get the product details
+    response = client.post('/product/getDetails', json={
+        'productID': product_id
+    })
+    assert response.status_code == 200
+    response_json = response.get_json()
+    response_prod = response_json['product']
+    assert response_prod['prod_id'] == product_id
+    assert response_prod['name'] == Helpers.product0_data['productName']
+    assert response_prod['seller_email'] == Helpers.user0_signup_data['email']
+    assert response_prod['initial_price'] == Helpers.product0_data['initialPrice']
+    assert response_prod['increment'] == Helpers.product0_data['increment']
+    assert response_prod['description'] == Helpers.product0_data['description']
+
+def test_product_getname(client: FlaskClient, app):
+    """
+    Test the get product name functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Get the product name
+    # this one uses query_string instead, for some reason
+    response = client.get('/getName', query_string={
+        'productID': product_id
+    })
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert response_json['result'] == Helpers.product0_data['productName']
+
+def test_product_delete(client: FlaskClient, app):
+    """
+    Test the delete product functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Delete the product
+    response = client.delete('/product/' + str(product_id))
+    assert response.status_code == 200
+
+    # Check if the product is deleted from the database
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM product WHERE prod_id=?", (product_id,))
+        product = cursor.fetchone()
+        assert product is None
+
+# known to fail
+@pytest.mark.skip(reason="Not implemented yet")
+def test_product_delete_not_logged_in(client: FlaskClient, app):
+    """
+    Test the delete product functionality when not logged in.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # reset the client
+    client2 = app.test_client()
+    with client2.application.app_context():
+        # Delete the product
+        response = client2.delete('/product/' + str(product_id))
+        assert response.status_code == 401
+
+
+@pytest.mark.skip(reason="Not implemented yet")
+def test_product_delete_not_owner(client: FlaskClient, app):
+    """
+    Test the delete product functionality when not the owner.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # reset the client
+    client2 = app.test_client()
+    with client2.application.app_context():
+        # User 1 signup
+        assert Helpers.createAndLoginUser(client2, Helpers.user1_signup_data) == 200
+
+        # Delete the product
+        response = client2.delete('/product/' + str(product_id))
+        assert response.status_code == 401
+        assert b'not the owner' in response.data.lower()
+
+def test_product_update(client: FlaskClient, app):
+    """
+    Test the update product functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create a product
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+
+    # get the product ID
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    # Update the product
+    updated_product_data = {
+        'productName': 'Updated Product',
+        'productID': product_id,
+        'initialPrice': 150,
+        'increment': 15,
+        'description': 'This is an updated test product.',
+        'deadlineDate': '2023-12-31',
+    }
+    response = client.post('/product/update', json=updated_product_data)
+    assert response.status_code == 200
+
+    # Check if the product is updated in the database
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM product WHERE prod_id=?", (product_id,))
+        product = cursor.fetchone()
+        assert product is not None
+        assert product[1] == updated_product_data['productName']
+
+
+def test_get_latest_products(client: FlaskClient, app):
+    """
+    Test the get latest products functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create both products
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+    response = client.post('/product/create', json=Helpers.product1_data)
+    assert response.status_code == 200
+
+    # get id of the first product
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    client2 = app.test_client()
+    # bid on the first product
+    with client2.application.app_context():
+        # User 1 signup
+        assert Helpers.createAndLoginUser(client2, Helpers.user1_signup_data) == 200
+
+        # User 1 bids on the product
+        bid_data = {
+            'prodId': product_id,
+            'bidAmount': Helpers.product0_data['initialPrice'] + Helpers.product0_data['increment']
+        }
+        response = client2.post('/bid/create', json=bid_data)
+        assert response.status_code == 200
+
+
+    # Get latest products
+    response = client.get('/getLatestProducts')
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert len(response_json) == 3
+    assert "products" in response_json.keys()
+    assert "maximumBids" in response_json.keys()
+    assert "names" in response_json.keys()
+
+
+def test_top_products(client: FlaskClient, app):
+    """
+    Test the get top products functionality.
+    """
+    assert Helpers.createAndLoginUser(client, Helpers.user0_signup_data) == 200
+    # Create both products
+    response = client.post('/product/create', json=Helpers.product0_data)
+    assert response.status_code == 200
+    response = client.post('/product/create', json=Helpers.product1_data)
+    assert response.status_code == 200
+
+    # get id of the first product
+    with client.application.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT prod_id FROM product WHERE name=?", (Helpers.product0_data['productName'],))
+        product_id = cursor.fetchone()[0]
+        assert product_id is not None, "Product ID should not be None"
+
+    client2 = app.test_client()
+    # bid on the first product
+    with client2.application.app_context():
+        # User 1 signup
+        assert Helpers.createAndLoginUser(client2, Helpers.user1_signup_data) == 200
+
+        # User 1 bids on the product
+        bid_data = {
+            'prodId': product_id,
+            'bidAmount': Helpers.product0_data['initialPrice'] + Helpers.product0_data['increment']
+        }
+        response = client2.post('/bid/create', json=bid_data)
+        assert response.status_code == 200
+
+    # Get top products
+    response = client.get('/getTopTenProducts')
+    assert response.status_code == 200
+    response_json = response.get_json()
+    assert "products" in response_json.keys()
+    assert len(response_json["products"]) == 2
+
+
