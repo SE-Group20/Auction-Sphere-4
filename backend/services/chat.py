@@ -60,12 +60,12 @@ class ChatService:
         (sender_id = ? OR recipient_id = ?) 
         AND product_id = ? 
         ORDER BY time_sent DESC'''
-        message_details = [bidder_user_id, bidder_user_id, product_id]
+        message_details = [user_id, bidder_user_id, product_id]
 
         self.cursor.execute(query, message_details)
         results = list(self.cursor.fetchall())
         if len(results) == 0:
-            return {"message": "User has not messaged regarding this product."}
+            return []
         else:
             self.set_messages_to_read(product_id, user_id, results[8])
             return results

@@ -11,7 +11,7 @@ const Messages = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.post(`${URL}/messages`)
+                const response = await axios.get(`${URL}/messages`)
                 console.log(response.data)
                 setData(response.data)
             } catch (e) {

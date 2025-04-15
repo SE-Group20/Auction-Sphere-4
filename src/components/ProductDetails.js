@@ -100,7 +100,7 @@ const ProductDetails = () => {
         try {
             let response = await axios.post(`${URL}/message`, {
                 product_id: id,
-                recipient_id: product.name,
+                recipient_id: product.seller_id,
                 message: "hi I am interested in your product"
             })
             console.log(response)

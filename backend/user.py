@@ -48,7 +48,7 @@ class User(flask_login.UserMixin):
 
         # Insert the new user into the database
         cursor = cursor.execute(
-            "INSERT INTO users (email, password, first_name, last_name, contact_number, email_opt_in) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (email, password, first_name, last_name, contact_number, email_opt_in) VALUES (?, ?, ?, ?, ?, ?)",
             (self.email, self.password, self.first_name, self.last_name, self.contact_number, self.email_opt_in)
         )
         conn.commit()

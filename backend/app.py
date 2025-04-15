@@ -1,24 +1,23 @@
 import os
-from flask import Flask, request, jsonify, g
-from flask_cors import CORS
 import sqlite3
-from sqlite3 import Error
+import tomllib
 from datetime import datetime, timedelta
+from sqlite3 import Error
 
-from backend.services.chat import ChatService
-from backend.user import User, MaybeUser
-from user import User, MaybeUser
 # from notification import NotificationService
 # https://flask-login.readthedocs.io/en/latest/
 import flask_login
+from flask import Flask, g, jsonify, request
+from flask_cors import CORS
+from user import MaybeUser, User
+
+from backend.services.chat import ChatService
+from backend.notification import send_email_notification
+
 login_manager = flask_login.LoginManager()
-from services.chat import ChatService
-from pytest import param
-from notification import NotificationService
-from notification import send_email_notification
 
 app = Flask(__name__)
-import tomllib
+
 conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
 # print(app.config)
 # print(conf_loaded)
@@ -101,7 +100,7 @@ def signup():
     email:str = request.get_json()['email']
     contact:str = request.get_json()['contact']
     password:str = request.get_json()['password']
-    email_opt_in:int = int(request.get_json().get('emailOptIn', False))
+    email_opt_in:bool = request.get_json().get('emailOptIn', False)
 
     user_obj = User(None, email, password, firstName, lastName, contact, email_opt_in)
 
@@ -422,7 +421,7 @@ def get_product_details():
     c = conn.cursor()
 
     # gets product details
-    query = "SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, description FROM product WHERE prod_id=?;"
+    query = "SELECT prod_id, name, seller_email, initial_price, date, increment, deadline_date, seller_id, description FROM product WHERE prod_id=?;"
     result = c.execute(query, (productID,))
     prod_details = list(result.fetchall())
 
@@ -434,7 +433,8 @@ def get_product_details():
         "date": prod_details[0][4],
         "increment": prod_details[0][5],
         "deadline_date": prod_details[0][6],
-        "description": prod_details[0][7]
+        "seller_id": prod_details[0][7],
+        "description": prod_details[0][8],
     }
 
 
