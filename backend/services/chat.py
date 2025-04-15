@@ -1,5 +1,7 @@
 import sqlite3
 
+from flask_login import current_user
+
 class ChatService:
     """
     send_message adds a new message to the messages table using the provided parameters of
@@ -48,7 +50,8 @@ class ChatService:
         m.read,
         m.time_sent,
         m.sender_id,
-        p.prod_id AS product_id
+        p.prod_id AS product_id,
+        m.recipient_id
          FROM messages AS m
         LEFT JOIN users AS u ON u.user_id = m.sender_id 
         LEFT JOIN product AS p ON p.prod_id = m.product_id 
@@ -57,15 +60,31 @@ class ChatService:
         AND product_id = ? 
         ORDER BY time_sent DESC'''
         message_details = [bidder_user_id, user_id, product_id]
-        print("message details: ", message_details)
+        # print("message details: ", message_details)
         cursor = conn.cursor()
         cursor.execute(query, message_details)
         results = list(cursor.fetchall())
+        new_results = []
+        for result in results:
+            new_result = {
+                "first_name": result[0],
+                "last_name": result[1],
+                "product_name": result[2],
+                "message_id": result[3],
+                "message": result[4],
+                "read": result[5],
+                "time_sent": result[6],
+                "sender_id": result[7],
+                "product_id": result[8],
+                "recipient_id": result[9],
+            }
+            new_results.append(new_result)
+        results = new_results
         print("got results: ", results)
         if len(results) == 0:
             return []
         else:
-            self.set_messages_to_read(conn, product_id, user_id, results[0][7])
+            self.set_messages_to_read(conn, product_id, user_id, results[0]["sender_id"])
             return results
 
     """
@@ -115,6 +134,33 @@ ORDER BY m.time_sent DESC'''
         cursor = conn.cursor()
         cursor.execute(query, message_details)
         results = list(cursor.fetchall())
+        new_results = []
+        for result in results:
+            print("result: ", result)
+            new_result = {
+                "first_name": result[0],
+                "last_name": result[1],
+                "product_name": result[2],
+                "message_id": result[3],
+                "message": result[4],
+                "read": result[5],
+                "time_sent": result[6],
+                "product_id": result[7],
+                "recipient_id": result[8],
+                "sender_id": result[9],
+                "seller_id": result[10],
+                "deadline_date": result[11],
+            }
+
+            # if the sender id is this user, use their first and last name
+            # look up the user, and get their first and last name
+            if new_result["sender_id"] == user_id:
+                new_result["first_name"] = current_user.first_name
+                new_result["last_name"] = current_user.last_name
+
+            new_results.append(new_result)
+
+        results = new_results
 
         if len(results) == 0:
             return {"message": "User has not messaged regarding this product."}

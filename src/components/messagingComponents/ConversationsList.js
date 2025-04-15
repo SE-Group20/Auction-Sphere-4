@@ -21,13 +21,13 @@ function ConversationsList (data) {
     }, [])
 
     function bidder_id(message) {
-        return message[10] === message[8] ? message[9] : message[8]
+        return message.seller_id === message.recipient_id ? message.sender_id : message.recipient_id
     }
     return (
         <Stack gap={3}>
             {messages ? (
                 messages.map((message) => (
-                    <Link to={"/message/" + message[7] + "/user/" + bidder_id(message)}>
+                    <Link to={"/message/" + message.product_id + "/user/" + bidder_id(message)}>
                         <ConversationCard
                             message={message}
                             conversationExchange={false}

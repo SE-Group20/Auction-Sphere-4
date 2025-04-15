@@ -17,19 +17,20 @@ function ConversationCard (message, conversationExchange) {
         'p-2': true,
         'conversation-wrapper': true,
         'clickable': !conversationExchange,
-        'unread': message[5] === 0,
-        'deadlineApproaching': isDeadlineInLessThanOneDay(message[11])
+        'unread': message.read === 0,
+        'deadlineApproaching': isDeadlineInLessThanOneDay(message.deadline_date)
     })
    const msg = message.message
+   console.log("msg", msg)
     return (
         <div className={messageClasses}>
             <h4>
-                {isDeadlineInLessThanOneDay(message[11]) ? <i className="bi-alarm"></i> : ''}
-                {!conversationExchange ? msg[0] + " " + msg[1] :
-                msg[2] + " - " + msg[0] + " " + msg[1]}
+                {isDeadlineInLessThanOneDay(msg.deadline_date) ? <i className="bi-alarm"></i> : ''}
+                {!conversationExchange ? msg.first_name + " " + msg.last_name :
+                msg.product_name + " - " + msg.first_name + " " + msg.last_name}
             </h4>
-            <i className="timestamp">{msg[6]}</i>
-            <p className="message_preview">{makeEllipses(msg[4])}</p>
+            <i className="timestamp">{msg.time_sent}</i>
+            <p className="message_preview">{makeEllipses(msg.message)}</p>
         </div>
     )
 

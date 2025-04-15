@@ -31,8 +31,8 @@ function MessagesListByConversation () {
             console.log('lastMessage', lastMessage)
             console.log('newMessage', newMessage)
             await axios.post(`${URL}/message`, {
-                product_id: lastMessage[8],
-                recipient_id: lastMessage[7],
+                product_id: lastMessage.product_id,
+                recipient_id: lastMessage.sender_id,
                 message: newMessage
             })
             // navigate back to /messages
@@ -72,7 +72,7 @@ function MessagesListByConversation () {
                                               <ConversationCard
                                                   message={message}
                                                   conversationExchange={true}
-                                                  key = {message[7]}
+                                                  key = {message.product_id}
                                               />
                                           ))
                                         : 'No messages found'}
