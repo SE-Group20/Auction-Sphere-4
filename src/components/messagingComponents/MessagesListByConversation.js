@@ -35,6 +35,8 @@ function MessagesListByConversation () {
                 recipient_id: lastMessage[7],
                 message: newMessage
             })
+            // navigate back to /messages
+            window.location.href = URL + '/messages'
         } catch (e) {
             console.log(e)
             toast.error('Error submitting message')
