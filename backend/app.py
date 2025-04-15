@@ -24,8 +24,13 @@ def create_app():
     # Create the Flask app
     app = Flask(__name__)
     # Load the configuration from a file
-    conf_loaded = app.config.from_file("notifications.toml", load=tomllib.load, text=False)
-    assert conf_loaded, "Failed to load configuration file"
+    # ensure the file exists
+    notify_config_file = "notifications.toml"
+    if not os.path.exists(notify_config_file):
+        print("Configuration file notifications.toml not found. Email's will not be sent.")
+        # use template config instead
+        notify_config_file = "notifications.toml.example"
+    conf_loaded = app.config.from_file(notify_config_file, load=tomllib.load, text=False)
     this_file_dir = os.path.dirname(os.path.abspath(__file__))
     key_file = os.path.join(this_file_dir, "app_key")
     if os.path.exists(key_file):
