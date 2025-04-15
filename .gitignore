@@ -7,5 +7,6 @@ backend/auction.db
 backend/app_key
 package-lock.json
 backend/notifications.toml
+.DS_Store
 
 
