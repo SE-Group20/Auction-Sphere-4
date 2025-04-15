@@ -44,27 +44,3 @@ def send_email_notification(new_bid_info):
         server.starttls()
         server.login(app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'])
         server.sendmail(msg['From'], recipients, msg.as_string())
-
-# TODO: this is never used!
-class NotificationService:
-    def __init__(self, app):
-        try:
-            database_file = app.config['DATABASE']
-            self.conn = sqlite3.connect(database_file, check_same_thread=False)
-        except sqlite3.Error as e:
-            print(e)
-
-    def get_user_notifications(self,user_id):
-        print(user_id)
-        query = '''SELECT message,detail_page,time_sent 
-                    FROM notifications 
-                    WHERE user_id = ? AND read = FALSE'''
-        message_details = [user_id]
-        cursor = self.conn.cursor()
-        cursor.execute(query, message_details)
-        results = list(cursor.fetchall())
-        print(results)
-        if len(results) == 0:
-            return {"notifications": "[]"}
-        else:
-            return {"notifications": results}
