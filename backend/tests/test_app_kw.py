@@ -1,11 +1,13 @@
+# Import os module for interacting with the operating system
+import os
 import shutil
-from unittest import TestCase
-import tempfile
+
+from flask.testing import FlaskClient
+
 # https://www.digitalocean.com/community/tutorials/unit-test-in-flask
 # Import sys module for modifying Python's runtime environment
 import sys
-# Import os module for interacting with the operating system
-import os
+import tempfile
 
 # Add the parent directory to sys.path
 new_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -13,9 +15,10 @@ new_path = os.path.abspath(os.path.join(new_path, '..'))
 print(f"Adding {new_path} to sys.path")
 sys.path.append(new_path)
 
-from flask.testing import FlaskClient
 import pytest  # noqa: E402
+
 from backend.app import create_app, get_db  # noqa: E402
+
 
 class Helpers:
     """Helper class for test cases."""
@@ -31,7 +34,6 @@ class Helpers:
 @pytest.fixture()
 def app():
     """Create a new app instance for testing."""
-    print("Creating app fixture")
     # create a temporary folder
     tmp_folder = tempfile.mkdtemp()
     app_key_path = os.path.join(tmp_folder, 'app_key')

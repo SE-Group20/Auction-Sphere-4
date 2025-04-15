@@ -143,9 +143,11 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
         notify_config_file = "notifications.toml.example"
     conf_loaded = app.config.from_file(notify_config_file, load=tomllib.load, text=False)
     this_file_dir = os.path.dirname(os.path.abspath(__file__))
-    key_file = os.path.join(this_file_dir, "app_key")
-    if os.path.exists(key_file):
-        with open(key_file, "r") as f:
+    # if app_key_path is not an absolute path, make it absolute
+    if not os.path.isabs(app_key_path):
+        app_key_path = os.path.join(this_file_dir, app_key_path)
+    if os.path.exists(app_key_path):
+        with open(app_key_path, "r") as f:
             app.secret_key = f.read()
     else:
         print("app_key file not found - creating a random key")
