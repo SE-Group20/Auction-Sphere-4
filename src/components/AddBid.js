@@ -44,6 +44,12 @@ const AddBid = ({ productId, sellerEmail }) => {
                             params: {productID: productId}
                         })
                         console.log(owner)
+
+                        // Get all users who have this product in watchlist
+                        const watchers = await axios.get(`${URL}/watchlist/users`, {
+                            params: { productId: productId }
+                        })
+
                         // Send a notification after a successful bid
                         await axios.post(`${URL}/notifications`, {
                             user_id: owner.data.result[0][0], 
@@ -63,6 +69,18 @@ const AddBid = ({ productId, sellerEmail }) => {
                                     detail_page: `/details/${productId}` // A link to the product details page
                                 });
                             }  
+                        }
+
+                        // Notify all watchers
+                        if (watchers.data.users && watchers.data.users.length > 0) {
+
+                            for (const watcher of watchers.data.users) {
+                                await axios.post(`${URL}/notifications`, {
+                                    user_id: watcher.user_id,
+                                    message: `A bid of $${amount} has been placed on : ${prodName.data.result}.`,
+                                    detail_page: `/details/${productId}` // A link to the product details page
+                                })
+                            }
                         }
                         console.log({URL})
                         toast.info('Notification sent successfully!');

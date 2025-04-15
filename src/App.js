@@ -14,6 +14,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import MessagesListByConversation from './components/messagingComponents/MessagesListByConversation'
 import './css/bootstrap.min.css'
+import Watchlist from './components/Watchlist'
 
 function App() {
     return (
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/message/:product_id/user/:bidder_id" element={<MessagesListByConversation />} />
+                <Route path="/watchlist" element={<Watchlist />} />
             </Routes>
         </>
         // </BrowserRouter>

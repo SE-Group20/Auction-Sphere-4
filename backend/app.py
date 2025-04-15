@@ -738,6 +738,204 @@ def get_current_user():
     }
     return jsonify(response)
 
+# Watchlist routes
+
+@app.route('/watchlist/check', methods=['POST'])
+# @login_required
+def check_watchlist():
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Get product ID from request
+        product_id = data.get('productID')
+        if not product_id:
+            return jsonify({"error": "Product ID is required"}), 400
+
+        # Get current user from Flask-Login
+        user_id = current_user.id
+
+        # Check if product exists in user's watchlist
+        query = '''SELECT 1 FROM watchlist WHERE user_id = ? AND product_id = ?'''
+        conn = get_db()
+        c = conn.cursor()
+        
+        _ = c.execute(query, [user_id, product_id])
+        
+        is_in_watchlist = c.fetchone() is not None
+
+        return jsonify({
+            "success": True,
+            "isInWatchlist": is_in_watchlist
+        })
+
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/watchlist/add', methods=['POST'])
+def add_to_watchlist():
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = jsonify({"success": True})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "*")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response
+        
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
+        # Get product_id from request data (use get() with default to avoid KeyError)
+        product_id = data.get('productID') or data.get('product_id')  # Handle both cases
+        if not product_id:
+            return jsonify({"error": "Product ID is required"}), 400
+        user_id = current_user.id
+
+        query = '''INSERT INTO watchlist (user_id, product_id) VALUES (?, ?)'''
+        conn = get_db()
+        c = conn.cursor()
+        
+        _ = c.execute(query, [user_id, product_id])
+        conn.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Added to watchlist",
+            "isInWatchlist": True  # Helps frontend update state
+        })
+
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Database integrity error"}), 400
+    except Exception as e:
+        print(f"Watchlist error: {str(e)}")  # Log for debugging
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/watchlist/remove', methods=['POST'])
+def remove_from_watchlist():
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
+        # Get product_id from request data (use get() with default to avoid KeyError)
+        product_id = data.get('productID') or data.get('product_id')  # Handle both cases
+        if not product_id:
+            return jsonify({"error": "Product ID is required"}), 400
+        user_id = current_user.id
+
+        query = '''DELETE FROM watchlist WHERE user_id = ? AND product_id = ?'''
+        conn = get_db()
+        c = conn.cursor()
+        
+        _ = c.execute(query, [user_id, product_id])
+        conn.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Removed from watchlist",
+            "isInWatchlist": False  # Helps frontend update state
+        })
+
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+    except sqlite3.IntegrityError as e:
+        return jsonify({"error": "Database integrity error"}), 400
+    except Exception as e:
+        print(f"Watchlist error: {str(e)}")  # Log for debugging
+        return jsonify({"error": "Internal server error"}), 500
+    
+@app.route('/watchlist/items', methods=['GET'])
+def get_watchlist_items():
+    current_user = getuserobject()
+    if current_user is None:
+        return jsonify({"message": "User not logged in"}), 401
+    try:
+        user_id = current_user.id
+        
+        query = '''SELECT p.prod_id, p.name, p.seller_email, p.initial_price, p.date, p.increment, p.deadline_date, p.description
+            FROM product p, watchlist w
+            WHERE p.prod_id = w.product_id AND w.user_id = ?
+            ORDER BY w.created_at DESC'''
+        conn = get_db()
+        c = conn.cursor()
+
+        watchlist_prod_result = c.execute(query, [user_id])
+        products:list[tuple[str,...]] = list(watchlist_prod_result.fetchall())
+        #print("Products got:", products)
+        highestBids:list[int] = []
+        names:list[str] = []
+        for product in products:
+            prod_result = c.execute("SELECT email, MAX(bid_amount) FROM bids WHERE prod_id=?;", (product[0],))
+            prod_result_list:list[tuple[str|None, int]] = list(prod_result.fetchall())
+            if (prod_result_list[0][0] is not None):
+                this_prod = prod_result_list[0]
+                highestBids.append(this_prod[1])
+                bidders_result = c.execute("SELECT first_name, last_name FROM users WHERE email=?;", (this_prod[0],))
+                bidders_result_list:list[tuple[str, str]] = list(bidders_result.fetchall())
+                names.append(bidders_result_list[0][0] + " " + bidders_result_list[0][1])
+            else:
+                highestBids.append(-1)
+                names.append("N/A")
+        response = {
+            "products": products,
+            "maximumBids": highestBids,
+            "names": names}
+        #print(response)
+        return jsonify(response)
+        
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/watchlist/users", methods=["GET"])
+def get_watchlist_users():
+    product_id = request.args.get('productId')
+    if not product_id:
+        return jsonify({"error": "productId parameter is required"}), 400
+    
+    query = '''SELECT DISTINCT u.user_id, u.email 
+               FROM users u, watchlist w 
+               WHERE u.user_id = w.user_id AND w.product_id = ?'''
+    
+    conn = get_db()
+    c = conn.cursor()
+    watchers_results = c.execute(query, [product_id])
+    results = list(watchers_results.fetchall())
+    
+    users = []
+    for row in results:
+        users.append({
+            "user_id": row[0],
+            "email": row[1]
+        })
+    
+    return jsonify({"users": users})
+
 
 database = r"auction.db"
 create_users_table = """CREATE TABLE IF NOT EXISTS users( 
@@ -751,7 +949,17 @@ create_users_table = """CREATE TABLE IF NOT EXISTS users(
 
 # TODO(kurt): normalize database - don't keep seller_id and seller_email as separate fields
 # use a foreign key to reference the user table instead
-create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, photo TEXT, seller_id INTEGER NOT NULL, seller_email TEXT NOT NULL, initial_price REAL NOT NULL, date TIMESTAMP NOT NULL, increment REAL, deadline_date TIMESTAMP NOT NULL, description TEXT,  FOREIGN KEY(seller_email) references users(email), FOREIGN KEY(seller_id) references users(user_id));"""
+create_product_table = """CREATE TABLE IF NOT EXISTS product(prod_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    name TEXT NOT NULL, photo TEXT, 
+    seller_id INTEGER NOT NULL,
+    seller_email TEXT NOT NULL,
+    initial_price REAL NOT NULL,
+    date TIMESTAMP NOT NULL,
+    increment REAL,
+    deadline_date TIMESTAMP NOT NULL,
+    description TEXT,
+    FOREIGN KEY(seller_email) references users(email),
+    FOREIGN KEY(seller_id) references users(user_id));"""
 
 create_bids_table = """CREATE TABLE IF NOT EXISTS bids(prod_id INTEGER, email TEXT NOT NULL , bid_amount REAL NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(email) references users(email), FOREIGN KEY(prod_id) references product(prod_id), PRIMARY KEY(prod_id, email));"""
 
@@ -781,6 +989,16 @@ create_notification_table = """CREATE TABLE IF NOT EXISTS notifications(
     
     )"""
 
+create_watchlist_table = """CREATE TABLE IF NOT EXISTS watchlist(
+    watchlist_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (user_id),
+    FOREIGN KEY (product_id) REFERENCES products(prod_id),
+    UNIQUE(user_id, product_id)
+)"""
+
 
 """Create Connection to database"""
 conn = sqlite3.connect(database_file, check_same_thread=False)
@@ -793,6 +1011,7 @@ if conn is not None:
 
     create_table(conn, create_message_table)
     create_table(conn, create_notification_table)
+    create_table(conn, create_watchlist_table)
     cursor = conn.cursor()
     conn.commit()
 
