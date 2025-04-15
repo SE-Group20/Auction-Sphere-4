@@ -595,7 +595,7 @@ def read_message(product_id, bidder_id):
     current_user = getuserobject()
     if current_user is None:
         return jsonify({"message": "User not logged in"}), 401
-    return chatService.read_message(current_user.id,bidder_id, product_id)
+    return chatService.read_message(current_user.id,int(bidder_id), int(product_id))
 
   
 """

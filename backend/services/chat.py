@@ -5,7 +5,6 @@ class ChatService:
 
     try:
         conn = sqlite3.connect('auction.db', check_same_thread=False)
-        cursor = conn.cursor()
     except sqlite3.Error as e:
         print(e)
 
@@ -17,8 +16,8 @@ class ChatService:
         query= '''INSERT INTO messages (sender_id, recipient_id, product_id, message) 
             VALUES (?, ?, ?, ?)'''
         message_details = [sender_id, recipient_id, product_id, message]
-
-        self.cursor.execute(query, message_details)
+        cursor = self.conn.cursor()
+        cursor.execute(query, message_details)
         self.conn.commit()
 
         return {"message": "Message sent successfully"}
@@ -28,15 +27,17 @@ class ChatService:
     """
     def user_is_product_seller(self, product_id, user_id):
         query= '''SELECT EXISTS(SELECT 1 FROM product WHERE prod_id = ? AND seller_id = ?)'''
-        self.cursor.execute(query, (product_id, user_id))
-        return self.cursor.fetchone()[0]
+        cursor = self.conn.cursor()
+        cursor.execute(query, (product_id, user_id))
+        return cursor.fetchone()[0]
 
     """
     set_messages_to_read sets the status of mesesages to read given the user ids
     """
     def set_messages_to_read(self, product_id, current_user, sender_id):
         query = '''UPDATE messages SET read = 1 WHERE product_id = ? AND recipient_id = ? AND sender_id = ?'''
-        self.cursor.execute(query, (product_id, current_user, sender_id))
+        cursor = self.conn.cursor()
+        cursor.execute(query, (product_id, current_user, sender_id))
         self.conn.commit()
 
 
@@ -52,7 +53,9 @@ class ChatService:
         m.message_id AS message_id,
         m.message,
         m.read,
-        m.time_sent
+        m.time_sent,
+        m.sender_id,
+        p.prod_id AS product_id
          FROM messages AS m
         LEFT JOIN users AS u ON u.user_id = m.sender_id 
         LEFT JOIN product AS p ON p.prod_id = m.product_id 
@@ -60,14 +63,16 @@ class ChatService:
         (sender_id = ? OR recipient_id = ?) 
         AND product_id = ? 
         ORDER BY time_sent DESC'''
-        message_details = [user_id, bidder_user_id, product_id]
-
-        self.cursor.execute(query, message_details)
-        results = list(self.cursor.fetchall())
+        message_details = [bidder_user_id, user_id, product_id]
+        print("message details: ", message_details)
+        cursor = self.conn.cursor()
+        cursor.execute(query, message_details)
+        results = list(cursor.fetchall())
+        print("got results: ", results)
         if len(results) == 0:
             return []
         else:
-            self.set_messages_to_read(product_id, user_id, results[8])
+            self.set_messages_to_read(product_id, user_id, results[0][7])
             return results
 
     """
@@ -114,8 +119,9 @@ ORDER BY m.time_sent DESC'''
 
         message_details = [user_id, user_id, user_id, user_id]
 
-        self.cursor.execute(query, message_details)
-        results = list(self.cursor.fetchall())
+        cursor = self.conn.cursor()
+        cursor.execute(query, message_details)
+        results = list(cursor.fetchall())
 
         if len(results) == 0:
             return {"message": "User has not messaged regarding this product."}

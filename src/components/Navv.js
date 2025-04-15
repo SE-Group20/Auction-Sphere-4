@@ -54,7 +54,7 @@ function Navv(args) {
             const response = await axios.get(`/notifications/get`);
             setNotifications(response.data.notifications);
             // convert from string to json before setting state
-            console.log("Notifications", notifications)
+            // console.log("Notifications", notifications)
         } catch (error) {
             console.error("Error fetching notifications:", error);
         }

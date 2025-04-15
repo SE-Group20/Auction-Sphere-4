@@ -28,10 +28,11 @@ function MessagesListByConversation () {
     const handleSubmit = async () => {
         try {
             const lastMessage = messages[0]
+            console.log('lastMessage', lastMessage)
+            console.log('newMessage', newMessage)
             await axios.post(`${URL}/message`, {
-                product_id: lastMessage[7],
-                sender_id: lastMessage[9],
-                recipient_id: lastMessage[8],
+                product_id: lastMessage[8],
+                recipient_id: lastMessage[7],
                 message: newMessage
             })
         } catch (e) {
@@ -69,6 +70,7 @@ function MessagesListByConversation () {
                                               <ConversationCard
                                                   message={message}
                                                   conversationExchange={true}
+                                                  key = {message[7]}
                                               />
                                           ))
                                         : 'No messages found'}
@@ -79,7 +81,7 @@ function MessagesListByConversation () {
                                         className="form-control"
                                         placeholder="Your Message here"
                                         id="newMessage"
-                                        onChange={(e) => setNewMessage(e)}
+                                        onChange={(e) => setNewMessage(e.target.value)}
                                     ></textarea>
                                     <label for="newMessage">New Message</label>
                                     <button
