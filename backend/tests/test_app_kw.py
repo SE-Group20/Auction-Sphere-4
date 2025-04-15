@@ -1,3 +1,6 @@
+import shutil
+from unittest import TestCase
+import tempfile
 # https://www.digitalocean.com/community/tutorials/unit-test-in-flask
 # Import sys module for modifying Python's runtime environment
 import sys
@@ -12,8 +15,7 @@ sys.path.append(new_path)
 
 from flask.testing import FlaskClient
 import pytest  # noqa: E402
-from backend.app import app as main_app  # noqa: E402
-from backend.app import init_db, get_db  # noqa: E402
+from backend.app import create_app, get_db  # noqa: E402
 
 class Helpers:
     """Helper class for test cases."""
@@ -29,16 +31,31 @@ class Helpers:
 @pytest.fixture()
 def app():
     """Create a new app instance for testing."""
-    app = main_app
+    print("Creating app fixture")
+    # create a temporary folder
+    tmp_folder = tempfile.mkdtemp()
+    app_key_path = os.path.join(tmp_folder, 'app_key')
+    db_path = os.path.join(tmp_folder, 'test.db')
+    # create a dummy notification file
+    notification_cfg_contents = """
+SMTP_USERNAME = ""
+SMTP_PASSWORD = ""
+SMTP_SERVER = ""
+    """
+    notification_cfg_path = os.path.join(tmp_folder, 'notifications.toml')
+    with open(notification_cfg_path, 'w') as f:
+        f.write(notification_cfg_contents)
+    app = create_app(
+        app_key_path=app_key_path,
+        notify_config_file=notification_cfg_path,
+        db_file=db_path
+    )
     app.config['TESTING'] = True
-    app.config['DATABASE'] = 'test.db'
-    with app.app_context():
-        init_db(get_db())
     yield app
 
-    # remove the test database after the test
-    if os.path.exists(app.config['DATABASE']):
-        os.remove(app.config['DATABASE'])
+    # remove the temporary folder after the test
+    shutil.rmtree(tmp_folder)
+
 
 @pytest.fixture
 def client(app):
@@ -74,3 +91,26 @@ def test_signup_db(client: FlaskClient):
         user = cursor.fetchone()
         assert user is not None, "User should exist after signup"
     
+def test_secret_key_read(app):
+    """
+    ensure that ./app_key is loaded
+    """
+    # check that the app_key is loaded from the file
+    with open('./app_key', 'r') as f:
+        app_key = f.read().strip()
+    assert app_key == app.secret_key
+
+def test_secret_key_generated():
+    """
+    ensure that the secret key is generated if it does not exist
+    """
+    # restart the app
+    new_app = create_app()
+    app_key = new_app.secret_key
+    # check that the file was created
+    assert os.path.exists('./app_key')
+    # check that the file contains the key
+    with open('./app_key', 'r') as f:
+        file_key = f.read().strip()
+    assert file_key == app_key
+
