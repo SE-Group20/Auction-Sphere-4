@@ -9,10 +9,10 @@ from sqlite3 import Error
 import flask_login
 from flask import Flask, g, has_app_context, jsonify, request
 from flask_cors import CORS
-from backend.user import MaybeUser, User
+from .user import MaybeUser, User
 
-from backend.services.chat import ChatService
-from backend.notification import send_email_notification
+from .services.chat import ChatService
+from .notification import send_email_notification
 
 login_manager = flask_login.LoginManager()
 
