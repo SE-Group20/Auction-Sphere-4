@@ -13,7 +13,7 @@ const Profile = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.post(`${URL}/profile`)
+                const response = await axios.get(`${URL}/profile`)
                 console.log(response.data)
                 setData(response.data)
             } catch (e) {

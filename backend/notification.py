@@ -28,6 +28,19 @@ def send_email_notification(new_bid_info):
     msg['To'] = ", ".join(recipients)
 
     with smtplib.SMTP(app.config['SMTP_SERVER'], 587) as server:
+        # verify that we're connected to the server
+        # https://stackoverflow.com/a/14678470
+        try:
+            status = server.noop()[0]
+        except:
+            status = -1
+
+        if status != 250:
+            if not app.testing:
+                print("Server not connected - email will not be sent")
+            # TODO: log this somewhere
+            return
+        # start TLS for security
         server.starttls()
         server.login(app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'])
         server.sendmail(msg['From'], recipients, msg.as_string())

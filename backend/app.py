@@ -129,12 +129,13 @@ def get_db(db_file=None) -> sqlite3.Connection:
 
 # flask app factory pattern. makes testing a _lot_ easier
 # (yes, it's not quite the same as the recommended setup, but hey)
-def create_app(app_key_path = "./app_key", notify_config_file="./notifications.toml", db_file="auction.db") -> Flask:
+def create_app(app_key_path = "./app_key", notify_config_file="./notifications.toml", db_file="./auction.db", testing=False) -> Flask:
     """
     Create a Flask application.
     """
     # Create the Flask app
     app = Flask(__name__)
+    app.testing = testing
     # Load the configuration from a file
     # ensure the file exists
     if not os.path.exists(notify_config_file):
@@ -150,12 +151,14 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
         with open(app_key_path, "r") as f:
             app.secret_key = f.read()
     else:
-        print("app_key file not found - creating a random key")
+        if not testing:
+            print("app_key file not found - creating a random key")
         import secrets
         app.secret_key = secrets.token_hex(16)
         with open("app_key", "w") as f:
             f.write(str(app.secret_key))
-        print("app_key file created - please keep this file safe")
+        if not testing: 
+            print("app_key file created - please keep this file safe")
     # Initialize CORS
     _ = CORS(app)
     # Initialize the login manager
@@ -246,7 +249,7 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
 
         result:User|None = User.try_login(conn, email, password)
         response = {}
-        print("Result:", result)
+        # print("Result:", result)
 
         if result:
             # we found a user in the db
@@ -268,7 +271,7 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
     """
 
 
-    @app.route('/profile', methods=["POST"])
+    @app.route('/profile', methods=["GET"])
     def profile():
         current_user = getuserobject()
         if current_user is None:
@@ -359,9 +362,12 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
 
     @app.route("/bid/create", methods=["POST"])
     def create_bid():
+        current_user = getuserobject()
+        if current_user is None or current_user.is_authenticated is False:
+            return jsonify({"message": "User not logged in"}), 401
         # Get relevant data
         productId:str = request.get_json()['prodId']
-        email:str = request.get_json()['email']
+        email:str = current_user.email
         amount:str = request.get_json()['bidAmount']
 
         # create db connection
@@ -420,10 +426,10 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
 
     @app.route("/product/create", methods=["POST"])
     def create_product():
+        current_user = getuserobject()
+        if current_user is None:
+            return jsonify({"message": "User not logged in"}), 401
         productName:str = request.get_json()['productName']
-        sellerEmail:str = request.get_json()['sellerEmail']
-        # TODO(kurt): don't trust the client's input!
-        sellerId:str = request.get_json()['sellerId']
         initialPrice:str = request.get_json()['initialPrice']
         increment:str = request.get_json()['increment']
         photo:str = request.get_json()['photo']
@@ -445,8 +451,8 @@ def create_app(app_key_path = "./app_key", notify_config_file="./notifications.t
         _ = c.execute(
             query,
             (str(productName),
-            str(sellerEmail),
-            str(sellerId),
+            str(current_user.email),
+            str(current_user.id),
             str(photo),
             initialPrice,
             deadlineDate,

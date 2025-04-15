@@ -33,10 +33,10 @@ class User(flask_login.UserMixin):
 
         # Check if the email already exists in the database
         cursor = conn.cursor()
-        cursor = cursor.execute("SELECT * FROM users WHERE email = ?", (self.id,))
+        cursor = cursor.execute("SELECT * FROM users WHERE email = ?", (self.email,))
         existing_user:tuple[str]|None = cursor.fetchone()
 
-        if existing_user:
+        if existing_user is not None:
             return False, "Email already exists."
 
         # check if contact number already exists in the database
