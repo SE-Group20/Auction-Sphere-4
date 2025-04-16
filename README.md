@@ -1,14 +1,14 @@
 <h1>Auction Sphere </h1>
 
-[![GitHub](https://img.shields.io/github/license/CSC-510-Group-19/Auction-Sphere-4)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/github/license/SE-Group20/Auction-Sphere-4)](https://github.com/SE-Group20/Auction-Sphere-4/blob/main/LICENSE)
 
-[![Build](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/code_cov.yml/badge.svg)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/code_cov.yml) [![CI/CD](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/react_workflow.yml/badge.svg)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/react_workflow.yml) [![Javascript Format Checker](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/code_formatter.yml/badge.svg)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/code_formatter.yml) [![Python Style Checker](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/style_checker.yml/badge.svg)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/actions/workflows/style_checker.yml) [![codecov](https://codecov.io/gh/CSC-510-Group-19/Auction-Sphere-4/graph/badge.svg?token=YFOKHL5ZKX)](https://codecov.io/gh/CSC-510-Group-19/Auction-Sphere-4)
+[![Build](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/code_cov.yml/badge.svg)](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/code_cov.yml) [![CI/CD](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/react_workflow.yml/badge.svg)](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/react_workflow.yml) [![Javascript Format Checker](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/code_formatter.yml/badge.svg)](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/code_formatter.yml) [![Python Style Checker](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/style_checker.yml/badge.svg)](https://github.com/SE-Group20/Auction-Sphere-4/actions/workflows/style_checker.yml) [![codecov](https://codecov.io/gh/SE-Group20/Auction-Sphere-4/graph/badge.svg?token=YFOKHL5ZKX)](https://codecov.io/gh/SE-Group20/Auction-Sphere-4)
 
-[![GitHub contributors](https://img.shields.io/github/contributors/CSC-510-Group-19/Auction-Sphere-4)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/graphs/contributors) [![GitHub last commit](https://img.shields.io/github/last-commit/CSC-510-Group-19/Auction-Sphere-4)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/commits/main) [![GitHub issues](https://img.shields.io/github/issues/CSC-510-Group-19/Auction-Sphere-4)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/issues) [![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/CSC-510-Group-19/Auction-Sphere-4)](https://github.com/CSC-510-Group-19/Auction-Sphere-4/issues?q=is%3Aissue+is%3Aclosed) ![GitHub forks](https://img.shields.io/github/forks/CSC-510-Group-19/Auction-Sphere-4?style=social)
+[![GitHub contributors](https://img.shields.io/github/contributors/SE-Group20/Auction-Sphere-4)](https://github.com/SE-Group20/Auction-Sphere-4/graphs/contributors) [![GitHub last commit](https://img.shields.io/github/last-commit/SE-Group20/Auction-Sphere-4)](https://github.com/SE-Group20/Auction-Sphere-4/commits/main) [![GitHub issues](https://img.shields.io/github/issues/SE-Group20/Auction-Sphere-4)](https://github.com/SE-Group20/Auction-Sphere-4/issues) [![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/SE-Group20/Auction-Sphere-4)](https://github.com/SE-Group20/Auction-Sphere-4/issues?q=is%3Aissue+is%3Aclosed) ![GitHub forks](https://img.shields.io/github/forks/SE-Group20/Auction-Sphere-4?style=social)
 
-![GitHub language count](https://img.shields.io/github/languages/count/CSC-510-Group-19/Auction-Sphere-4)
+![GitHub language count](https://img.shields.io/github/languages/count/SE-Group20/Auction-Sphere-4)
 
-![GitHub top language](https://img.shields.io/github/languages/top/CSC-510-Group-19/Auction-Sphere-4)
+![GitHub top language](https://img.shields.io/github/languages/top/SE-Group20/Auction-Sphere-4)
 
 [![DOI](https://zenodo.org/badge/924952183.svg)](https://doi.org/10.5281/zenodo.14932116)
 
@@ -88,12 +88,12 @@ https://github.com/kartikson1/Auction-Sphere/blob/main/coverage/lcov-report/inde
 
 ## Link to Discussion Channel:
 
-[Disccussion Channel](https://github.com/CSC-510-Group-19/Auction-Sphere-4/discussions)
+[Disccussion Channel](https://github.com/SE-Group20/Auction-Sphere-4/discussions)
 
 ## Support
 
 For Any quesries, please use our discussions channel:
-[Disccussion Channel](https://github.com/CSC-510-Group-19/Auction-Sphere-4/discussions)
+[Disccussion Channel](https://github.com/SE-Group20/Auction-Sphere-4/discussions)
 
 or, reach out to any of the group members mentioned below
 
