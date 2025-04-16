@@ -37,7 +37,7 @@ def send_email_notification(new_bid_info):
 
         if status != 250:
             if not app.testing:
-                print("Server not connected - email will not be sent")
+                print("Server not connected - email may not be sent")
                 # try anyway?
             else:
                 # testing mode, skip
