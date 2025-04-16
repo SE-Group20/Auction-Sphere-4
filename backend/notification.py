@@ -38,8 +38,10 @@ def send_email_notification(new_bid_info):
         if status != 250:
             if not app.testing:
                 print("Server not connected - email will not be sent")
-            # TODO: log this somewhere
-            return
+                # try anyway?
+            else:
+                # testing mode, skip
+                return
         # start TLS for security
         server.starttls()
         server.login(app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'])
