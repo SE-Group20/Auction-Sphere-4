@@ -203,9 +203,9 @@ const ProductDetails = () => {
                                             <div key={index}>
                                                 <p>
                                                     Bidder:{' '}
-                                                    {bid[0] + ' ' + bid[1]}
+                                                    {bid[0]}
                                                 </p>
-                                                <p>Bid amount: ${bid[2]}</p>
+                                                <p>Bid amount: ${bid[1]}</p>
                                             </div>
                                         ))}
                                     </>
